@@ -180,32 +180,6 @@ annotation_label(Label0, Body, Label) :-
 	).
 
 
-%%	json_annotation_list(+TargetURI, +FieldURI, -Annotations)
-%
-%	Annotation is a list with annotations represented in prolog JSON
-%	notation.
-
-json_annotation_list(Target, FieldURI, JSON) :-
-	findall(annotation(A, Body, L),
-		annotation_in_field(Target, FieldURI, A, Body, L),
-		Annotations),
-	prolog_to_json(Annotations, JSON).
-
-annotation_in_field(Target, FieldURI, Annotation, Body, Label) :-
-	gv_resource_head(Target, Commit),
-	gv_resource_graph(Commit, Graph),
-	(   setting(user_restrict, true)
-	->  logged_on(User, anonymous)
-	;   true
-	),
-	rdf(Annotation, oac:hasTarget, Target, Graph),
-	rdf(Annotation, an:annotationField, FieldURI, Graph),
-	rdf(Annotation, dcterms:creator, User, Graph),
-	rdf(Annotation, oac:hasBody, Body0, Graph),
-	rdf(Annotation, dcterms:title, Lit, Graph),
-	annotation_body(Body, Body0),
-	literal_text(Lit, Label).
-
 http:convert_parameter(json_rdf_object, Atom, Term) :-
 	atom_json_term(Atom, JSON, []),
 	json_to_prolog(JSON, Term).
