@@ -2,31 +2,16 @@
 
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_parameters)).
-:- use_module(library(graph_version)).
 :- use_module(library(http/json)).
 :- use_module(library(http/http_json)).
 :- use_module(library(http/json_convert)).
-:- use_module(user(user_db)).
 :- use_module(library(semweb/rdf_db)).
 :- use_module(library(semweb/rdf_label)).
+:- use_module(library(graph_version)).
+:- use_module(user(user_db)).
 
-/*
-% semweb
-
-:- use_module(library('semweb/rdfs')).
-
-:- use_module(library(yui3_beta)).
-
-% http libraries
-:- use_module(library('http/html_write')).
-:- use_module(library('http/html_head')).
-:- use_module(library('http/http_path')).
-:- use_module(components(label)).
-:- use_module(library(settings)).
-
-:- use_module(library(instance_search)).
-
-*/
+:- rdf_register_ns(oac, 'http://www.openannotation.org/ns/').
+:- rdf_register_ns(an, 'http://semanticweb.cs.vu.nl/annotate/').
 
 :- setting(login, boolean, true, 'Require login').
 
