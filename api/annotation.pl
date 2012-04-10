@@ -1,4 +1,8 @@
-:- module(annotation_api, []).
+:- module(annotation_api, [
+			   rdf_add_annotation/7,
+			   rdf_update_annotation/7,
+			   json_annotation_list/3
+			  ]).
 
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_parameters)).
@@ -14,6 +18,9 @@
 :- rdf_register_ns(an, 'http://semanticweb.cs.vu.nl/annotate/').
 
 :- setting(login, boolean, true, 'Require login').
+:- setting(user_restrict, boolean, false,
+	   'When set to true only own annotations are shown.').
+
 
 /***************************************************
 * http handlers
@@ -62,16 +69,6 @@ http_add_annotation(Request) :-
 	reply_json(json([annotation=Annotation,
 			 graph=Graph,
 			 head=Head])).
-
-rdf_add_annotation(Graph, User, Target, Field, Body, Label, Annotation) :-
-	rdf_bnode(Annotation),
-	rdf_assert(Annotation, dcterms:creator, User, Graph),
-	rdf_assert(Annotation, an:annotationField, Field, Graph),
-	rdf_assert(Annotation, rdf:type, oac:'Annotation', Graph),
-	rdf_assert(Annotation, oac:hasTarget, Target, Graph),
-	rdf_assert(Annotation, oac:hasBody, Body, Graph),
-	rdf_assert(Annotation, dcterms:title, literal(Label), Graph).
-
 
 
 %%	http_remove_annotation(+Request)
@@ -136,6 +133,15 @@ http_update_annotation(Request) :-
 			 graph=Graph,
 			 head=Head])).
 
+rdf_add_annotation(Graph, User, Target, Field, Body, Label, Annotation) :-
+	rdf_bnode(Annotation),
+	rdf_assert(Annotation, dcterms:creator, User, Graph),
+	rdf_assert(Annotation, an:annotationField, Field, Graph),
+	rdf_assert(Annotation, rdf:type, oac:'Annotation', Graph),
+	rdf_assert(Annotation, oac:hasTarget, Target, Graph),
+	rdf_assert(Annotation, oac:hasBody, Body, Graph),
+	rdf_assert(Annotation, dcterms:title, literal(Label), Graph).
+
 rdf_update_annotation(Graph, Annotation, User, Target, Field, Body, Label) :-
 	(   var(Annotation)
 	->  rdf_bnode(Annotation),
@@ -150,10 +156,32 @@ rdf_update_annotation(Graph, Annotation, User, Target, Field, Body, Label) :-
 	rdf_assert(Annotation, oac:hasBody, Body, Graph),
 	rdf_assert(Annotation, dcterms:title, literal(Label), Graph).
 
+%%	json_annotation_list(+TargetURI, +FieldURI, -Annotations)
+%
+%	Annotation is a list with annotations represented in prolog JSON
+%	notation.
 
-		 /*******************************
-		 *               Utils		*
-		 *******************************/
+json_annotation_list(Target, FieldURI, JSON) :-
+	findall(annotation(A, Body, L),
+		annotation_in_field(Target, FieldURI, A, Body, L),
+		Annotations),
+	prolog_to_json(Annotations, JSON).
+
+annotation_in_field(Target, FieldURI, Annotation, Body, Label) :-
+	gv_resource_head(Target, Commit),
+	gv_resource_graph(Commit, Graph),
+	(   setting(user_restrict, true)
+	->  logged_on(User, anonymous)
+	;   true
+	),
+	rdf(Annotation, oac:hasTarget, Target, Graph),
+	rdf(Annotation, an:annotationField, FieldURI, Graph),
+	rdf(Annotation, dcterms:creator, User, Graph),
+	rdf(Annotation, oac:hasBody, Body0, Graph),
+	rdf(Annotation, dcterms:title, Lit, Graph),
+	annotation_body(Body, Body0),
+	literal_text(Lit, Label).
+
 
 annotation_body(literal(L), literal(L)) :- !.
 annotation_body(uri(URI), URI).
@@ -169,9 +197,14 @@ http:convert_parameter(json_rdf_object, Atom, Term) :-
 	atom_json_term(Atom, JSON, []),
 	json_to_prolog(JSON, Term).
 
+
 :- json_object
 	annotation(annotation:atom, body:_, label:atom),
 	uri(value:uri) + [type=uri],
 	literal(lang:atom, value:_) + [type=literal],
 	literal(type:atom, value:_) + [type=literal],
 	literal(value:_) + [type=literal].
+
+
+
+
