@@ -1,1 +1,2 @@
 config(annotation_service, link).
+config(oac_graphviz, link).
