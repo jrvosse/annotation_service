@@ -15,9 +15,6 @@
 :- use_module(library(graph_version)).
 :- use_module(user(user_db)).
 
-:- rdf_register_ns(oac, 'http://www.openannotation.org/ns/').
-:- rdf_register_ns(an, 'http://semanticweb.cs.vu.nl/annotate/').
-
 :- setting(login, boolean, true, 'Require login').
 :- setting(user_restrict, boolean, false,
 	   'When set to true only own annotations are shown.').
