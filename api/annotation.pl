@@ -1,8 +1,4 @@
-:- module(annotation_api, [
-			   rdf_add_annotation/7,
-			   annotation_in_field/5,
-			   json_annotation_list/3
-			  ]).
+:- module(annotation_api, []). % use http api for access
 
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_parameters)).
@@ -17,7 +13,6 @@
 :- setting(login, boolean, true, 'Require login').
 :- setting(user_restrict, boolean, false,
 	   'When set to true only own annotations are shown.').
-
 
 /***************************************************
 * http handlers
@@ -58,8 +53,18 @@ http_add_annotation(Request) :-
         ),
 	annotation_body(Body0, Body),
 	annotation_label(Label0, Body, Label),
-	gv_resource_commit(TargetURI, User,
-			   rdf_add_annotation(Graph, User, TargetURI, FieldURI, Body, Label, Comment, Annotation),
+	rdf_add_annotation([target(TargetURI),
+			    body(Body),
+			    field(FieldURI),
+			    user(User),
+			    label(Label),
+			    comment(Comment)
+			   ],
+			   Annotation,
+			   Triples),
+	gv_resource_commit(TargetURI,
+			   User,
+			   add(Triples),
 			   Head,
 			   Graph),
 	reply_json(json([annotation=Annotation,
@@ -83,8 +88,9 @@ http_remove_annotation(Request) :-
         ;   logged_on(User, anonymous)
         ),
 	once(rdf(Annotation, oac:hasTarget, Target)),
+	findall(rdf(Annotation,O,P), rdf(Annotation,O,P,Graph), Triples),
 	gv_resource_commit(Target, User,
-			   rdf_retractall(Annotation, _, _, Graph),
+			   remove(Triples),
 			   Head,
 			   Graph),
 	reply_json(json([annotation=Annotation,
@@ -116,14 +122,17 @@ http_get_annotation(Request) :-
 		Annotations),
 	reply_json(json(Annotations)).
 
-rdf_add_annotation(Graph, User, Target, Field, Body, Label, Annotation) :-
-	rdf_add_annotation(Graph, User, Target, Field, Body, Label, '', Annotation).
-
-rdf_add_annotation(Graph, User, Target, Field, Body, Label, Comment, Annotation) :-
+rdf_add_annotation(Options, Annotation,Triples) :-
+	option(comment(Comment), Options),
 	(   Comment \= ''
 	->  CommentPair = [ po(rdfs:comment,literal(Comment))]
 	;   CommentPair = []
 	),
+	option(user(User), Options),
+	option(label(Label), Options),
+	option(field(Field), Options),
+	option(target(Target), Options),
+	option(body(Body), Options),
 	KeyValue0 = [
 		     po(rdf:type, oac:'Annotation'),
 		     po(dcterms:creator,User),
@@ -139,9 +148,10 @@ rdf_add_annotation(Graph, User, Target, Field, Body, Label, Comment, Annotation)
 	variant_sha1(Pairs, Hash),
 	atom_concat(an, Hash, Local),
 	rdf_global_id(an:Local, Annotation),
-	forall(member(po(P,O), Pairs),
-	       rdf_assert(Annotation, P, O, Graph)
-	      ).
+	maplist(po2rdf(Annotation),Pairs,Triples).
+
+po2rdf(S,po(P,O),rdf(S,P,O)).
+
 
 %%	json_annotation_list(+TargetURI, +FieldURI, -Annotations)
 %
