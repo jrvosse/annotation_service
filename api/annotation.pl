@@ -120,17 +120,28 @@ rdf_add_annotation(Graph, User, Target, Field, Body, Label, Annotation) :-
 	rdf_add_annotation(Graph, User, Target, Field, Body, Label, '', Annotation).
 
 rdf_add_annotation(Graph, User, Target, Field, Body, Label, Comment, Annotation) :-
-	rdf_bnode(Annotation),
-	rdf_assert(Annotation, rdf:type, oac:'Annotation', Graph),
-	rdf_assert(Annotation, dcterms:creator, User, Graph),
-	rdf_assert(Annotation, dcterms:title, literal(Label), Graph),
-	rdf_assert(Annotation, an:annotationField, Field, Graph),
-	rdf_assert(Annotation, oac:hasTarget, Target, Graph),
-	rdf_assert(Annotation, oac:hasBody, Body, Graph),
 	(   Comment \= ''
-	->  rdf_assert(Annotation, rdfs:comment, literal(Comment), Graph)
-	;   true
-	).
+	->  CommentPair = [ po(rdfs:comment,literal(Comment))]
+	;   CommentPair = []
+	),
+	KeyValue0 = [
+		     po(rdf:type, oac:'Annotation'),
+		     po(dcterms:creator,User),
+		     po(dcterms:title, literal(Label)),
+		     po(an:annotationField, Field),
+		     po(oac:hasTarget, Target),
+		     po(oac:hasBody, Body)
+		     |
+		     CommentPair
+		    ],
+	sort(KeyValue0, KeyValue),
+	rdf_global_term(KeyValue, Pairs),
+	variant_sha1(Pairs, Hash),
+	atom_concat(an, Hash, Local),
+	rdf_global_id(an:Local, Annotation),
+	forall(member(po(P,O), Pairs),
+	       rdf_assert(Annotation, P, O, Graph)
+	      ).
 
 %%	json_annotation_list(+TargetURI, +FieldURI, -Annotations)
 %
