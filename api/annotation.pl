@@ -27,6 +27,7 @@
 :- http_handler(cliopatria(api/annotation/add),    http_add_annotation, []).
 :- http_handler(cliopatria(api/annotation/update), http_update_annotation, []).
 :- http_handler(cliopatria(api/annotation/remove), http_remove_annotation, []).
+:- http_handler(cliopatria(api/annotation/get),	   http_get_annotation, []).
 
 %%	http_add_annotation(+Request)
 %
@@ -139,6 +140,32 @@ http_update_annotation(Request) :-
 			 graph=Graph,
 			 head=Head])).
 
+http_get_annotation(Request) :-
+	http_parameters(Request,
+			[ target(TargetURI,
+				 [uri,
+				  description('URI of the annotation target')
+				 ]),
+			  field(FieldURI,
+				[uri,
+				 optional(true),
+				 description('URI of the annotation field')
+				])
+			]),
+	findall(Field,
+		(   Field = FieldURI,
+		    has_annotation_field(TargetURI, Field)
+		),
+		Fields0),
+	sort(Fields0, Fields),
+	findall(FieldURI=json([annotations=JSON]),
+		(   member(FieldURI, Fields),
+		    json_annotation_list(TargetURI, FieldURI, JSON)
+		),
+		Annotations),
+	reply_json(json(Annotations)).
+
+
 rdf_add_annotation(Graph, User, Target, Field, Body, Label, Comment, Annotation) :-
 	rdf_bnode(Annotation),
 	rdf_assert(Annotation, rdf:type, oac:'Annotation', Graph),
@@ -181,16 +208,21 @@ rdf_update_annotation(Graph, Annotation, User, Target, Field, Body, Label, Comme
 %	notation.
 
 json_annotation_list(Target, FieldURI, JSON) :-
-	findall(annotation(A, Body, L, Comment),
-		annotation_in_field(Target, FieldURI, A, Body, L, Comment),
+	findall(annotation(A, Body, L, Comment, User),
+		annotation_in_field(Target, FieldURI, A, Body, L, Comment, User),
 		Annotations),
 	prolog_to_json(Annotations, JSON).
 
-% annotation_in_field/5 is deprecated, use annotation_in_field/6
-annotation_in_field(Target, FieldURI, Annotation, Body, Label) :-
-	annotation_in_field(Target, FieldURI, Annotation, Body, Label, _Comment).
+has_annotation_field(Target, Field) :-
+	gv_resource_head(Target, Commit),
+	gv_resource_graph(Commit, Graph),
+	rdf(_Annotation, an:annotationField, Field, Graph).
 
-annotation_in_field(Target, FieldURI, Annotation, Body, Label, Comment) :-
+% annotation_in_field/5 is deprecated, use annotation_in_field/7
+annotation_in_field(Target, FieldURI, Annotation, Body, Label) :-
+	annotation_in_field(Target, FieldURI, Annotation, Body, Label, _Comment, _User).
+
+annotation_in_field(Target, FieldURI, Annotation, Body, Label, Comment, User) :-
 	gv_resource_head(Target, Commit),
 	gv_resource_graph(Commit, Graph),
 	(   setting(user_restrict, true)
@@ -226,7 +258,7 @@ http:convert_parameter(json_rdf_object, Atom, Term) :-
 
 
 :- json_object
-	annotation(annotation:atom, body:_, label:atom, comment:atom),
+	annotation(annotation:atom, body:_, label:atom, comment:atom, user:uri),
 	uri(value:uri) + [type=uri],
 	literal(lang:atom, value:_) + [type=literal],
 	literal(type:atom, value:_) + [type=literal],
