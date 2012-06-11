@@ -1,5 +1,5 @@
 :- module(annotation_api, [
-			   rdf_add_annotation/8,
+			   rdf_add_annotation/7,
 			   rdf_update_annotation/7,
 			   annotation_in_field/5,
 			   json_annotation_list/3
@@ -165,6 +165,8 @@ http_get_annotation(Request) :-
 		Annotations),
 	reply_json(json(Annotations)).
 
+rdf_add_annotation(Graph, User, Target, Field, Body, Label, Annotation) :-
+	rdf_add_annotation(Graph, User, Target, Field, Body, Label, '', Annotation).
 
 rdf_add_annotation(Graph, User, Target, Field, Body, Label, Comment, Annotation) :-
 	rdf_bnode(Annotation),
