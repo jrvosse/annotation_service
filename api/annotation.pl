@@ -148,7 +148,7 @@ rdf_add_annotation(Graph, User, Target, Field, Body, Label, Comment, Annotation)
 	rdf_assert(Annotation, oac:hasTarget, Target, Graph),
 	rdf_assert(Annotation, oac:hasBody, Body, Graph),
 	(   Comment \= ''
-	->  rdf_assert(Annotation, dcterms:comment, literal(Comment), Graph)
+	->  rdf_assert(Annotation, rdfs:comment, literal(Comment), Graph)
 	;   true
 	).
 
@@ -170,7 +170,7 @@ rdf_update_annotation(Graph, Annotation, User, Target, Field, Body, Label, Comme
 	rdf_assert(Annotation, dcterms:title, literal(Label), Graph),
 	rdf_assert(Annotation, oac:hasBody, Body, Graph),
 	(   Comment \= ''
-	->  rdf_assert(Annotation, dcterms:comment, literal(Comment), Graph)
+	->  rdf_assert(Annotation, rdfs:comment, literal(Comment), Graph)
 	;   true
 	).
 
@@ -202,7 +202,7 @@ annotation_in_field(Target, FieldURI, Annotation, Body, Label, Comment) :-
 	rdf(Annotation, dcterms:creator, User, Graph),
 	rdf(Annotation, oac:hasBody, Body0, Graph),
 	rdf(Annotation, dcterms:title, Lit, Graph),
-	(   rdf(Annotation, dcterms:comment, Comment0, Graph)
+	(   rdf(Annotation, rdfs:comment, Comment0, Graph)
 	->  literal_text(Comment0, Comment)
 	;   Comment=""
 	),
