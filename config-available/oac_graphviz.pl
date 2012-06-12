@@ -5,9 +5,11 @@
 :- use_module(library(semweb/rdf_db)).
 :- use_module(library(semweb/rdfs)).
 :- use_module(library(semweb/rdf_abstract)).
+% Need this for the gv namespace declaration
+:- use_module(library(graph_version)). 
 
 :- rdf_meta
-        context_triple(r, t).
+        graph_context_triple(r, t).
 
 cliopatria:context_graph(URI, RDF) :-
 	rdf(_, gv:graph, URI),
