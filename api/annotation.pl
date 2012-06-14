@@ -97,6 +97,11 @@ http_remove_annotation(Request) :-
 			 head=Head,
 			 graph=Graph])).
 
+
+%%	http_get_annotation(+Request)
+%
+%	Web service to get resource annotations
+
 http_get_annotation(Request) :-
 	http_parameters(Request,
 			[ target(TargetURI,
@@ -115,9 +120,9 @@ http_get_annotation(Request) :-
 		),
 		Fields0),
 	sort(Fields0, Fields),
-	findall(FieldURI=json([annotations=JSON]),
-		(   member(FieldURI, Fields),
-		    json_annotation_list(TargetURI, FieldURI, JSON)
+	findall(Field=json([annotations=JSON]),
+		(   member(Field, Fields),
+		    json_annotation_list(TargetURI, Field, JSON)
 		),
 		Annotations),
 	reply_json(json(Annotations)).
