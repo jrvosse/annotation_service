@@ -6,8 +6,9 @@
 :- use_module(library(semweb/rdfs)).
 :- use_module(library(semweb/rdf_abstract)).
 
-% Need this module for the gv namespace declaration:
+% Need these modules solely for their namespace declarations:
 :- use_module(library(graph_version)).
+:- use_module(api(annotation)).
 
 :- rdf_meta
         graph_context_triple(r, t).

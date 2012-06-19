@@ -11,6 +11,9 @@
 :- use_module(components(label)).
 :- use_module(user(user_db)).
 
+:- rdf_register_ns(oac, 'http://www.openannotation.org/ns/').
+:- rdf_register_ns(an, 'http://semanticweb.cs.vu.nl/annotate/').
+
 :- setting(login, boolean, true, 'Require login').
 :- setting(user_restrict, boolean, false,
 	   'When set to true only own annotations are shown.').
@@ -214,6 +217,14 @@ annotation_label(Label0, Body, Label) :-
 	->  rdf_display_label(Body, Label)
 	;   Label = Label0
 	).
+
+%%	time_stamp(-Integer)
+%
+%	Return time-stamp rounded to integer.
+
+time_stamp(Int) :-
+	get_time(Now),
+	Int is round(Now).
 
 
 http:convert_parameter(json_rdf_object, Atom, Term) :-
