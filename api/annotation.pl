@@ -151,7 +151,7 @@ rdf_add_annotation(Options, Annotation,Triples) :-
 	sort(KeyValue0, KeyValue),
 	rdf_global_term(KeyValue, Pairs),
 	variant_sha1(Pairs, Hash),
-	gv_hash_uri('hash/an_', Hash, Annotation),
+	gv_hash_uri(Hash, Annotation),
 	maplist(po2rdf(Annotation),Pairs,Triples).
 
 po2rdf(S,po(P,O),rdf(S,P,O)).
