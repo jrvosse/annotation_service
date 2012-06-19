@@ -35,23 +35,26 @@ cliopatria:context_graph(URI, RDF) :-
 graph_context_triple(G, rdf(S,P,O)) :-
 	rdf_equal(P, oa:hasTarget),
 	rdf(S, P, O, G).
+graph_context_triple(G, rdf(S,P,O)) :-
+	rdf_equal(P, oac:hasTarget),
+	rdf(S, P, O, G).
 graph_context_triple(G, rdf(S,P,G)) :-
 	rdf_equal(P, gv:graph),
 	rdf(S,P,G).
 graph_context_triple(G, rdf(H,P,T)) :-
-	rdf(_, oa:hasTarget, T,G),
+	(   rdf(_, oa:hasTarget, T, G) ; rdf(_, oac:hasTarget, T, G)),
 	rdf_equal(P, gv:head),
 	rdf(H,P,T).
 
 annotation_context_triple(S, rdf(S,P,O)) :-
 	rdf_equal(oa:hasTarget, P),
-	rdf(S,P,O).
+	rdf_has(S,P,O).
 annotation_context_triple(S, rdf(S,P,O)) :-
 	rdf_equal(oa:hasBody, P),
-	rdf(S,P,O).
+	rdf_has(S,P,O).
 annotation_context_triple(S, rdf(S,P,O)) :-
 	rdf_equal(oa:annotator, P),
-	rdf(S,P,O).
+	rdf_has(S,P,O).
 
 annotation_context_triple(S, rdf(Commit,P,G)) :-
 	rdf(S,rdf:type,_,G),
@@ -66,3 +69,6 @@ cliopatria:node_shape(URI, Shape, _Options) :-
 cliopatria:node_shape(URI, Shape, _Options) :-
 	rdf(URI, gv:head, _),
 	Shape = [fontize('20.00'), style(filled),fillcolor('#FF8888')].
+
+
+

@@ -89,7 +89,7 @@ http_remove_annotation(Request) :-
         ->  ensure_logged_on(User)
         ;   logged_on(User, anonymous)
         ),
-	once(rdf(Annotation, oa:hasTarget, Target)),
+	once(rdf_has(Annotation, oa:hasTarget, Target)),
 	findall(rdf(Annotation,O,P), rdf(Annotation,O,P,Graph), Triples),
 	gv_resource_commit(Target, User,
 			   remove(Triples),
@@ -197,12 +197,12 @@ annotation_in_field(Target, FieldURI, Annotation, Body, Label, Comment, User) :-
 	->  logged_on(User, anonymous)
 	;   true
 	),
-	rdf(Annotation, oa:hasTarget, Target, Graph),
-	rdf(Annotation, an:annotationField, FieldURI, Graph),
-	rdf(Annotation, oa:annotator, User, Graph),
-	rdf(Annotation, oa:hasBody, Body0, Graph),
-	rdf(Annotation, dcterms:title, Lit, Graph),
-	(   rdf(Annotation, rdfs:comment, Comment0, Graph)
+	rdf_has(Annotation, oa:hasTarget, Target, Graph),
+	rdf_has(Annotation, an:annotationField, FieldURI, Graph),
+	rdf_has(Annotation, oa:annotator, User, Graph),
+	rdf_has(Annotation, oa:hasBody, Body0, Graph),
+	rdf_has(Annotation, dcterms:title, Lit, Graph),
+	(   rdf_has(Annotation, rdfs:comment, Comment0, Graph)
 	->  literal_text(Comment0, Comment)
 	;   Comment=""
 	),
