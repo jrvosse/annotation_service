@@ -24,6 +24,14 @@
 :- http_handler(cliopatria(api/annotation/add),    http_add_annotation, []).
 :- http_handler(cliopatria(api/annotation/remove), http_remove_annotation, []).
 
+:- rdf_meta
+	rdf_has_graph(r,r,r,r).
+
+rdf_has_graph(S,P,O,G) :-
+	rdf_graph(G),
+	rdf_has(S,P,O,RP),
+	rdf(S,RP,O,G).
+
 %%	http_add_annotation(+Request)
 %
 %	Web service to add resource annotations
@@ -208,12 +216,6 @@ annotation_in_field(Target, FieldURI, Annotation, Body, Label, Comment, User) :-
 	),
 	annotation_body(Body, Body0),
 	literal_text(Lit, Label).
-
-
-rdf_has_graph(S,P,O,G) :-
-	rdf_graph(G),
-	rdf_has(S,P,O,RP),
-	rdf(S,RP,O,G).
 
 annotation_body(literal(L), literal(L)) :- !.
 annotation_body(uri(URI), URI).
