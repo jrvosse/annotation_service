@@ -11,8 +11,15 @@
 :- use_module(components(label)).
 :- use_module(user(user_db)).
 
+% Namespace for package-specific extensions:
+:- rdf_register_ns(an,  'http://semanticweb.cs.vu.nl/annotate/').
+
+% Namespace for old open annotation model:
 :- rdf_register_ns(oac, 'http://www.openannotation.org/ns/').
-:- rdf_register_ns(an, 'http://semanticweb.cs.vu.nl/annotate/').
+
+% Namespaces for new open annotation model. Warning: under development!
+:- rdf_register_ns(oa,  'http://www.w3.org/ns/openannotation/core/').      % The core Open Annotation model
+:- rdf_register_ns(oax,	'http://www.w3.org/ns/openannotation/extension/'). % Interoperable extensions to the core model
 
 :- setting(login, boolean, true, 'Require login').
 :- setting(user_restrict, boolean, false,
@@ -142,8 +149,11 @@ rdf_add_annotation(Options, Annotation,Triples) :-
 	option(field(Field), Options),
 	option(target(Target), Options),
 	option(body(Body), Options),
+	time_stamp(T),
+	format_time(atom(TimeStamp), '%Y-%m-%dT%H-%M-%S%Oz', T),
 	KeyValue0 = [
 		     po(rdf:type, oac:'Annotation'),
+		     po(oa:annotated, literal(type(xsd:dateTime, TimeStamp))),
 		     po(dcterms:creator,User),
 		     po(dcterms:title, literal(Label)),
 		     po(an:annotationField, Field),
