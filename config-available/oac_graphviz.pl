@@ -1,4 +1,4 @@
-:- module(oac_graphviz, []).
+:- module(oa_graphviz, []).
 
 :- use_module(cliopatria(hooks)).
 :- use_module(library(semweb/rdf_db)).
@@ -23,7 +23,7 @@ cliopatria:context_graph(URI, RDF) :-
 	RDF \= [].
 
 cliopatria:context_graph(URI, RDF) :-
-	rdfs_individual_of(URI, oac:'Annotation'),% assume URI is an Annotations
+	rdfs_individual_of(URI, oa:'Annotation'),% assume URI is an Annotations
 	!,
 	findall(T, annotation_context_triple(URI, T), RDF0),
 	sort(RDF0, RDF1),
@@ -33,24 +33,24 @@ cliopatria:context_graph(URI, RDF) :-
 	RDF \= [].
 
 graph_context_triple(G, rdf(S,P,O)) :-
-	rdf_equal(P, oac:hasTarget),
+	rdf_equal(P, oa:hasTarget),
 	rdf(S, P, O, G).
 graph_context_triple(G, rdf(S,P,G)) :-
 	rdf_equal(P, gv:graph),
 	rdf(S,P,G).
 graph_context_triple(G, rdf(H,P,T)) :-
-	rdf(_, oac:hasTarget, T,G),
+	rdf(_, oa:hasTarget, T,G),
 	rdf_equal(P, gv:head),
 	rdf(H,P,T).
 
 annotation_context_triple(S, rdf(S,P,O)) :-
-	rdf_equal(oac:hasTarget, P),
+	rdf_equal(oa:hasTarget, P),
 	rdf(S,P,O).
 annotation_context_triple(S, rdf(S,P,O)) :-
-	rdf_equal(oac:hasBody, P),
+	rdf_equal(oa:hasBody, P),
 	rdf(S,P,O).
 annotation_context_triple(S, rdf(S,P,O)) :-
-	rdf_equal(dcterms:creator, P),
+	rdf_equal(oa:annotator, P),
 	rdf(S,P,O).
 
 annotation_context_triple(S, rdf(Commit,P,G)) :-
@@ -59,7 +59,7 @@ annotation_context_triple(S, rdf(Commit,P,G)) :-
 	rdf(Commit, P, G).
 
 cliopatria:node_shape(URI, Shape, _Options) :-
-	rdfs_individual_of(URI, oac:'Annotation'),
+	rdfs_individual_of(URI, oa:'Annotation'),
 	Shape = [shape('Mdiamond'),fontize('20.00'), style(filled),fillcolor('#FF8888')].
 
 

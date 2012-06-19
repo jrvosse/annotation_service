@@ -20,9 +20,9 @@
 * http handlers
 ***************************************************/
 
+:- http_handler(cliopatria(api/annotation/get),	   http_get_annotation, []).
 :- http_handler(cliopatria(api/annotation/add),    http_add_annotation, []).
 :- http_handler(cliopatria(api/annotation/remove), http_remove_annotation, []).
-:- http_handler(cliopatria(api/annotation/get),	   http_get_annotation, []).
 
 %%	http_add_annotation(+Request)
 %
@@ -89,7 +89,7 @@ http_remove_annotation(Request) :-
         ->  ensure_logged_on(User)
         ;   logged_on(User, anonymous)
         ),
-	once(rdf(Annotation, oac:hasTarget, Target)),
+	once(rdf(Annotation, oa:hasTarget, Target)),
 	findall(rdf(Annotation,O,P), rdf(Annotation,O,P,Graph), Triples),
 	gv_resource_commit(Target, User,
 			   remove(Triples),
@@ -143,13 +143,13 @@ rdf_add_annotation(Options, Annotation,Triples) :-
 	time_stamp(T),
 	format_time(atom(TimeStamp), '%Y-%m-%dT%H-%M-%S%Oz', T),
 	KeyValue0 = [
-		     po(rdf:type, oac:'Annotation'),
+		     po(rdf:type, oa:'Annotation'),
 		     po(oa:annotated, literal(type(xsd:dateTime, TimeStamp))),
-		     po(dcterms:creator,User),
+		     po(oa:annotator, User),
 		     po(dcterms:title, literal(Label)),
 		     po(an:annotationField, Field),
-		     po(oac:hasTarget, Target),
-		     po(oac:hasBody, Body)
+		     po(oa:hasTarget, Target),
+		     po(oa:hasBody, Body)
 		     |
 		     CommentPair
 		    ],
@@ -197,10 +197,10 @@ annotation_in_field(Target, FieldURI, Annotation, Body, Label, Comment, User) :-
 	->  logged_on(User, anonymous)
 	;   true
 	),
-	rdf(Annotation, oac:hasTarget, Target, Graph),
+	rdf(Annotation, oa:hasTarget, Target, Graph),
 	rdf(Annotation, an:annotationField, FieldURI, Graph),
-	rdf(Annotation, dcterms:creator, User, Graph),
-	rdf(Annotation, oac:hasBody, Body0, Graph),
+	rdf(Annotation, oa:annotator, User, Graph),
+	rdf(Annotation, oa:hasBody, Body0, Graph),
 	rdf(Annotation, dcterms:title, Lit, Graph),
 	(   rdf(Annotation, rdfs:comment, Comment0, Graph)
 	->  literal_text(Comment0, Comment)

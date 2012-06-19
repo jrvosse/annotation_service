@@ -1,0 +1,20 @@
+@prefix    void: <http://rdfs.org/ns/void#> .
+@prefix    vann: <http://purl.org/vocab/vann/> .
+@prefix     lib: <http://www.swi-prolog.org/rdf/library/> .
+@prefix     owl: <http://www.w3.org/2002/07/owl#> .
+@prefix	dcterms: <http://purl.org/dc/terms/> .
+
+[ vann:preferredNamespacePrefix	"oac" ;
+  vann:preferredNamespaceUri "http://www.openannotation.org/ns/" ;
+] .
+
+[ vann:preferredNamespacePrefix	"oa" ;
+  vann:preferredNamespaceUri "http://www.w3.org/ns/openannotation/core/";
+] .
+
+<oa_compat>
+	a void:Dataset ;
+	dcterms:title "Backward compatibility triples for oa namespace updates";
+	owl:versionInfo "0.01" ;
+	void:dataDump
+		<oa_compat.ttl> .

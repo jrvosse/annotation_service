@@ -19,5 +19,5 @@ Prolog.
 :- rdf_register_ns(oax,	'http://www.w3.org/ns/openannotation/extension/').
 
 :- rdf_attach_library(annotation_service(rdf)).
-% :- rdf_load_library(oa).
+:- rdf_load_library(oa_compat).
 
