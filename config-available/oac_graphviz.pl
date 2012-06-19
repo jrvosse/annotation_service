@@ -1,6 +1,5 @@
 :- module(oac_graphviz, []).
 
-
 :- use_module(cliopatria(hooks)).
 :- use_module(library(semweb/rdf_db)).
 :- use_module(library(semweb/rdfs)).
@@ -8,7 +7,7 @@
 
 % Need these modules solely for their namespace declarations:
 :- use_module(library(graph_version)).
-:- use_module(api(annotation)).
+:- use_module(library(oa_schema)).
 
 :- rdf_meta
         graph_context_triple(r, t).

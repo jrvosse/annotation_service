@@ -10,16 +10,7 @@
 :- use_module(library(graph_version)).
 :- use_module(components(label)).
 :- use_module(user(user_db)).
-
-% Namespace for package-specific extensions:
-:- rdf_register_ns(an,  'http://semanticweb.cs.vu.nl/annotate/').
-
-% Namespace for old open annotation model:
-:- rdf_register_ns(oac, 'http://www.openannotation.org/ns/').
-
-% Namespaces for new open annotation model. Warning: under development!
-:- rdf_register_ns(oa,  'http://www.w3.org/ns/openannotation/core/').      % The core Open Annotation model
-:- rdf_register_ns(oax,	'http://www.w3.org/ns/openannotation/extension/'). % Interoperable extensions to the core model
+:- use_module(library(oa_schema)).
 
 :- setting(login, boolean, true, 'Require login').
 :- setting(user_restrict, boolean, false,
