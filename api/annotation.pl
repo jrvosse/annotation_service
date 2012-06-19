@@ -171,6 +171,12 @@ json_annotation_list(Target, FieldURI, JSON) :-
 		Annotations),
 	prolog_to_json(Annotations, JSON).
 
+%%      has_annotation_field(?Target, ?Field) is nondet.
+%
+%       Evaluates to true if there exists an Annotation
+%       on Target for Field in the most recent (eg. the head) Annotation
+%       graph for Target.
+
 has_annotation_field(Target, Field) :-
 	gv_resource_head(Target, Commit),
 	gv_resource_graph(Commit, Graph),
