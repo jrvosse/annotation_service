@@ -8,6 +8,7 @@
 :- use_module(library(semweb/rdf_db)).
 :- use_module(library(semweb/rdf_label)).
 :- use_module(library(graph_version)).
+:- use_module(components(label)).
 :- use_module(user(user_db)).
 
 :- setting(login, boolean, true, 'Require login').
@@ -163,8 +164,10 @@ po2rdf(S,po(P,O),rdf(S,P,O)).
 %	notation.
 
 json_annotation_list(Target, FieldURI, JSON) :-
-	findall(annotation(A, Body, L, Comment, User),
-		annotation_in_field(Target, FieldURI, A, Body, L, Comment, User),
+	findall(annotation(A, Body, L, D, Comment, User),
+		(annotation_in_field(Target, FieldURI, A, Body, L, Comment, User),
+		 resource_link(A,D)
+		),
 		Annotations),
 	prolog_to_json(Annotations, JSON).
 
@@ -213,7 +216,13 @@ http:convert_parameter(json_rdf_object, Atom, Term) :-
 
 
 :- json_object
-	annotation(annotation:atom, body:_, label:atom, comment:atom, user:uri),
+	annotation(
+	    annotation:atom,
+	    body:_,
+	    label:atom,
+	    display_link:atom,
+	    comment:atom,
+	    user:uri),
 	uri(value:uri) + [type=uri],
 	literal(lang:atom, value:_) + [type=literal],
 	literal(type:atom, value:_) + [type=literal],
