@@ -5,16 +5,27 @@
 :- use_module(library(semweb/rdf_db)).
 :- use_module(library(semweb/rdfs)).
 :- use_module(library(semweb/rdf_abstract)).
-% Need this for the gv namespace declaration
-:- use_module(library(graph_version)). 
+
+% Need this module for the gv namespace declaration:
+:- use_module(library(graph_version)).
 
 :- rdf_meta
         graph_context_triple(r, t).
 
 cliopatria:context_graph(URI, RDF) :-
-	rdf(_, gv:graph, URI),
+	rdf(_, gv:graph, URI),			% assume URI is a graph with annotations
 	!,
 	findall(T, graph_context_triple(URI, T), RDF0),
+	sort(RDF0, RDF1),
+	minimise_graph(RDF1, RDF2),		% remove inverse/symmetric/...
+	bagify_graph(RDF2, RDF3, Bags, []),	% Create bags of similar resources
+	append(RDF3, Bags, RDF),
+	RDF \= [].
+
+cliopatria:context_graph(URI, RDF) :-
+	rdfs_individual_of(URI, oac:'Annotation'),% assume URI is an Annotations
+	!,
+	findall(T, annotation_context_triple(URI, T), RDF0),
 	sort(RDF0, RDF1),
 	minimise_graph(RDF1, RDF2),		% remove inverse/symmetric/...
 	bagify_graph(RDF2, RDF3, Bags, []),	% Create bags of similar resources
@@ -32,6 +43,26 @@ graph_context_triple(G, rdf(H,P,T)) :-
 	rdf_equal(P, gv:head),
 	rdf(H,P,T).
 
+annotation_context_triple(S, rdf(S,P,O)) :-
+	rdf_equal(oac:hasTarget, P),
+	rdf(S,P,O).
+annotation_context_triple(S, rdf(S,P,O)) :-
+	rdf_equal(oac:hasBody, P),
+	rdf(S,P,O).
+annotation_context_triple(S, rdf(S,P,O)) :-
+	rdf_equal(dcterms:creator, P),
+	rdf(S,P,O).
+
+annotation_context_triple(S, rdf(Commit,P,G)) :-
+	rdf(S,rdf:type,_,G),
+	rdf_equal(gv:graph, P),
+	rdf(Commit, P, G).
+
 cliopatria:node_shape(URI, Shape, _Options) :-
 	rdfs_individual_of(URI, oac:'Annotation'),
 	Shape = [shape('Mdiamond'),fontize('20.00'), style(filled),fillcolor('#FF8888')].
+
+
+cliopatria:node_shape(URI, Shape, _Options) :-
+	rdf(URI, gv:head, _),
+	Shape = [fontize('20.00'), style(filled),fillcolor('#FF8888')].
