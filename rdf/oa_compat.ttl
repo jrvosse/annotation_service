@@ -8,5 +8,5 @@
 oa:Annotation rdfs:subClassOf oac:Annotation .
 
 oa:hasTarget rdfs:subPropertyOf oac:hasTarget .
-oa:hasBody   rdfs:subPropertyOf oac:Body .
+oa:hasBody   rdfs:subPropertyOf oac:hasBody .
 oa:annotator rdfs:subPropertyOf dcterms:creator .
