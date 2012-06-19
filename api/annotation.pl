@@ -197,18 +197,23 @@ annotation_in_field(Target, FieldURI, Annotation, Body, Label, Comment, User) :-
 	->  logged_on(User, anonymous)
 	;   true
 	),
-	rdf_has(Annotation, oa:hasTarget, Target, Graph),
-	rdf_has(Annotation, an:annotationField, FieldURI, Graph),
-	rdf_has(Annotation, oa:annotator, User, Graph),
-	rdf_has(Annotation, oa:hasBody, Body0, Graph),
-	rdf_has(Annotation, dcterms:title, Lit, Graph),
-	(   rdf_has(Annotation, rdfs:comment, Comment0, Graph)
+	rdf_has_graph(Annotation, oa:hasTarget, Target, Graph),
+	rdf_has_graph(Annotation, an:annotationField, FieldURI, Graph),
+	rdf_has_graph(Annotation, oa:annotator, User, Graph),
+	rdf_has_graph(Annotation, oa:hasBody, Body0, Graph),
+	rdf_has_graph(Annotation, dcterms:title, Lit, Graph),
+	(   rdf_has_graph(Annotation, rdfs:comment, Comment0, Graph)
 	->  literal_text(Comment0, Comment)
 	;   Comment=""
 	),
 	annotation_body(Body, Body0),
 	literal_text(Lit, Label).
 
+
+rdf_has_graph(S,P,O,G) :-
+	rdf_graph(G),
+	rdf_has(S,P,O,RP),
+	rdf(S,RP,O,G).
 
 annotation_body(literal(L), literal(L)) :- !.
 annotation_body(uri(URI), URI).
