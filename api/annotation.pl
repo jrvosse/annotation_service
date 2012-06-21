@@ -57,10 +57,8 @@ http_add_annotation(Request) :-
 		       description('Optional motivation for or comment about annotation')
 		      ])
 		]),
-	(   setting(login, true)
-        ->  ensure_logged_on(User)
-        ;   logged_on(User, anonymous)
-        ),
+
+	user_url(User),
 	annotation_body(Body0, Body),
 	annotation_label(Label0, Body, Label),
 	rdf_add_annotation([target(TargetURI),
@@ -72,13 +70,16 @@ http_add_annotation(Request) :-
 			   ],
 			   Annotation,
 			   Triples),
+
 	gv_resource_commit(TargetURI,
 			   User,
 			   add(Triples),
 			   Head,
 			   Graph),
+	resource_link(Annotation, Link),
 	reply_json(json([annotation=Annotation,
 			 graph=Graph,
+			 display_link=Link,
 			 head=Head])).
 
 
@@ -93,10 +94,7 @@ http_remove_annotation(Request) :-
 		      description('URI of the annotation object')
 		     ])
 		]),
-	(   setting(login, true)
-        ->  ensure_logged_on(User)
-        ;   logged_on(User, anonymous)
-        ),
+	user_url(User),
 	once(rdf_has(Annotation, oa:hasTarget, Target)),
 	findall(rdf(Annotation,O,P), rdf(Annotation,O,P,Graph), Triples),
 	gv_resource_commit(Target, User,
@@ -202,7 +200,7 @@ annotation_in_field(Target, FieldURI, Annotation, Body, Label, Comment, User) :-
 	gv_resource_head(Target, Commit),
 	gv_resource_graph(Commit, Graph),
 	(   setting(user_restrict, true)
-	->  logged_on(User, anonymous)
+	->  user_url(User)
 	;   true
 	),
 	rdf_has_graph(Annotation, oa:hasTarget, Target, Graph),
@@ -234,6 +232,15 @@ time_stamp(Int) :-
 	get_time(Now),
 	Int is round(Now).
 
+
+user_url(User) :-
+	(   setting(login, true)
+        ->  ensure_logged_on(U),
+	    user_property(U, url(User))
+        ;   logged_on(U)
+	->  user_property(U, url(User))
+	;   rdf_global_id(an:anonymous, User)
+        ).
 
 http:convert_parameter(json_rdf_object, Atom, Term) :-
 	atom_json_term(Atom, JSON, []),
