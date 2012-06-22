@@ -54,7 +54,7 @@ http_add_annotation(Request) :-
 			 description('Label of the annotation value')]),
 		  comment(Comment,
 		      [default(''),
-		       description('Optional motivation for or comment about annotation')
+		       description('Optional motivation for a comment about the annotation')
 		      ])
 		]),
 
@@ -73,6 +73,7 @@ http_add_annotation(Request) :-
 
 	gv_resource_commit(TargetURI,
 			   User,
+			   Comment,
 			   add(Triples),
 			   Head,
 			   Graph),
@@ -89,15 +90,20 @@ http_add_annotation(Request) :-
 
 http_remove_annotation(Request) :-
 	http_parameters(Request,
-		[ annotation(Annotation,
-		     [uri,
-		      description('URI of the annotation object')
-		     ])
+		[ annotation(
+		      Annotation,
+		      [uri,
+		       description('URI of the annotation object')
+		      ]),
+		  comment(
+		      Comment,
+		      [default(''),
+		       description('Optional motivation for a comment about the removal')])
 		]),
 	user_url(User),
 	once(rdf_has(Annotation, oa:hasTarget, Target)),
 	findall(rdf(Annotation,O,P), rdf(Annotation,O,P,Graph), Triples),
-	gv_resource_commit(Target, User,
+	gv_resource_commit(Target, User, Comment,
 			   remove(Triples),
 			   Head,
 			   Graph),
