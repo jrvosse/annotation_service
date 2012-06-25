@@ -1,4 +1,5 @@
-:- module(annotation_api, []). % use http api for access
+:- module(annotation_api, []).
+% No exports: use http api or library(annotation) for access
 
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_parameters)).
@@ -11,6 +12,8 @@
 :- use_module(components(label)).
 :- use_module(user(user_db)).
 :- use_module(library(oa_schema)).
+:- use_module(library(oa_annotation)).
+
 
 :- setting(login, boolean, true, 'Require login').
 :- setting(user_restrict, boolean, false,
@@ -141,38 +144,6 @@ http_get_annotation(Request) :-
 		Annotations),
 	reply_json(json(Annotations)).
 
-rdf_add_annotation(Options, Annotation,Triples) :-
-	option(comment(Comment), Options),
-	(   Comment \= ''
-	->  CommentPair = [ po(rdfs:comment,literal(Comment))]
-	;   CommentPair = []
-	),
-	option(user(User), Options),
-	option(label(Label), Options),
-	option(field(Field), Options),
-	option(target(Target), Options),
-	option(body(Body), Options),
-	time_stamp(T),
-	format_time(atom(TimeStamp), '%Y-%m-%dT%H-%M-%S%Oz', T),
-	KeyValue0 = [
-		     po(rdf:type, oa:'Annotation'),
-		     po(oa:annotated, literal(type(xsd:dateTime, TimeStamp))),
-		     po(oa:annotator, User),
-		     po(dcterms:title, literal(Label)),
-		     po(an:annotationField, Field),
-		     po(oa:hasTarget, Target),
-		     po(oa:hasBody, Body)
-		     |
-		     CommentPair
-		    ],
-	sort(KeyValue0, KeyValue),
-	rdf_global_term(KeyValue, Pairs),
-	variant_sha1(Pairs, Hash),
-	gv_hash_uri(Hash, Annotation),
-	maplist(po2rdf(Annotation),Pairs,Triples).
-
-po2rdf(S,po(P,O),rdf(S,P,O)).
-
 
 %%	json_annotation_list(+TargetURI, +FieldURI, -Annotations)
 %
@@ -230,13 +201,6 @@ annotation_label(Label0, Body, Label) :-
 	;   Label = Label0
 	).
 
-%%	time_stamp(-Integer)
-%
-%	Return time-stamp rounded to integer.
-
-time_stamp(Int) :-
-	get_time(Now),
-	Int is round(Now).
 
 
 user_url(User) :-
