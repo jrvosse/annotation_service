@@ -18,6 +18,8 @@
 :- setting(login, boolean, true, 'Require login').
 :- setting(user_restrict, boolean, false,
 	   'When set to true only own annotations are shown.').
+:- setting(link_tags, boolean, true,
+	   'When set to true tags are hyperlinked to their annotation objects in the UI.').
 
 /***************************************************
 * http handlers
@@ -80,7 +82,7 @@ http_add_annotation(Request) :-
 			   add(Triples),
 			   Head,
 			   Graph),
-	resource_link(Annotation, Link),
+	tag_link(annotation, Link),
 	reply_json(json([annotation=Annotation,
 			 graph=Graph,
 			 display_link=Link,
@@ -153,7 +155,7 @@ http_get_annotation(Request) :-
 json_annotation_list(Target, FieldURI, JSON) :-
 	findall(annotation(A, Body, L, D, Comment, User),
 		(annotation_in_field(Target, FieldURI, A, Body, L, Comment, User),
-		 resource_link(A,D)
+		 tag_link(A,D)
 		),
 		Annotations),
 	prolog_to_json(Annotations, JSON).
@@ -212,6 +214,13 @@ user_url(User) :-
 	;   rdf_global_id(an:anonymous, User)
         ).
 
+
+tag_link(Annotation,Link) :-
+	(   setting(link_tags, true)
+	->  resource_link(Annotation, Link)
+	;   Link = ''
+	).
+
 http:convert_parameter(json_rdf_object, Atom, Term) :-
 	atom_json_term(Atom, JSON, []),
 	json_to_prolog(JSON, Term).
@@ -229,6 +238,7 @@ http:convert_parameter(json_rdf_object, Atom, Term) :-
 	literal(lang:atom, value:_) + [type=literal],
 	literal(type:atom, value:_) + [type=literal],
 	literal(value:_) + [type=literal].
+
 
 
 
