@@ -202,10 +202,10 @@ annotation_label(Label0, Body, Label) :-
 	).
 
 
-
 user_url(User) :-
 	(   setting(login, true)
         ->  ensure_logged_on(U),
+	    authorized(write(default, annotate)),
 	    user_property(U, url(User))
         ;   logged_on(U)
 	->  user_property(U, url(User))
