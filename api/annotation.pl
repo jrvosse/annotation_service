@@ -71,20 +71,18 @@ http_add_annotation(Request) :-
 			    field(FieldURI),
 			    user(User),
 			    label(Label),
+			    graph(TargetURI),
 			    comment(Comment)
 			   ],
-			   Annotation,
-			   Triples),
+			   Annotation),
 
 	gv_resource_commit(TargetURI,
 			   User,
 			   Comment,
-			   add(Triples),
-			   Head,
-			   Graph),
+			   Head),
+
 	tag_link(annotation, Link),
 	reply_json(json([annotation=Annotation,
-			 graph=Graph,
 			 display_link=Link,
 			 head=Head])).
 
@@ -106,15 +104,11 @@ http_remove_annotation(Request) :-
 		       description('Optional motivation for a comment about the removal')])
 		]),
 	user_url(User),
-	once(rdf_has(Annotation, oa:hasTarget, Target)),
-	findall(rdf(Annotation,O,P), rdf(Annotation,O,P,Graph), Triples),
-	gv_resource_commit(Target, User, Comment,
-			   remove(Triples),
-			   Head,
-			   Graph),
+	rdf_remove_annotation(Annotation, Target),
+	gv_resource_commit(Target, User, Comment, Head),
 	reply_json(json([annotation=Annotation,
-			 head=Head,
-			 graph=Graph])).
+			 head=Head])).
+
 
 
 %%	http_get_annotation(+Request)
@@ -167,17 +161,14 @@ json_annotation_list(Target, FieldURI, JSON) :-
 %       graph for Target.
 
 has_annotation_field(Target, Field) :-
-	gv_resource_head(Target, Commit),
-	gv_resource_graph(Commit, Graph),
-	rdf(_Annotation, an:annotationField, Field, Graph).
+	rdf(_Annotation, an:annotationField, Field, Target).
 
 % annotation_in_field/5 is deprecated, use annotation_in_field/7
 annotation_in_field(Target, FieldURI, Annotation, Body, Label) :-
 	annotation_in_field(Target, FieldURI, Annotation, Body, Label, _Comment, _User).
 
 annotation_in_field(Target, FieldURI, Annotation, Body, Label, Comment, User) :-
-	gv_resource_head(Target, Commit),
-	gv_resource_graph(Commit, Graph),
+	Graph = Target,
 	(   setting(user_restrict, true)
 	->  user_url(User)
 	;   true
@@ -238,8 +229,3 @@ http:convert_parameter(json_rdf_object, Atom, Term) :-
 	literal(lang:atom, value:_) + [type=literal],
 	literal(type:atom, value:_) + [type=literal],
 	literal(value:_) + [type=literal].
-
-
-
-
-
