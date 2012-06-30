@@ -20,7 +20,7 @@ rdf_add_annotation(Options, Annotation) :-
 	option(target(Target), Options),
 	option(body(Body),     Options),
 	option(graph(Graph),   Options, 'annotations'),
-	time_stamp(T),
+	get_time(T),
 	format_time(atom(TimeStamp), '%Y-%m-%dT%H-%M-%S%Oz', T),
 	KeyValue0 = [
 		     po(rdf:type, oa:'Annotation'),
@@ -52,11 +52,3 @@ rdf_remove_annotation(Annotation, Target) :-
 	->  rdf_retractall(Annotation, _, _, Target)
 	;   true
 	).
-
-%%	time_stamp(-Integer)
-%
-%	Return time-stamp rounded to integer.
-
-time_stamp(Int) :-
-	get_time(Now),
-	Int is round(Now).
