@@ -57,7 +57,7 @@ http_add_annotation(Request) :-
 		  label(Label0,
 			[optional(true),
 			 description('Label of the annotation value')]),
-		  comment(Comment,
+		  comment(UserComment,
 		      [default(''),
 		       description('Optional motivation for a comment about the annotation')
 		      ])
@@ -72,13 +72,14 @@ http_add_annotation(Request) :-
 			    user(User),
 			    label(Label),
 			    graph(TargetURI),
-			    comment(Comment)
+			    comment(UserComment)
 			   ],
 			   Annotation),
 
+	format(atom(CommitComment), 'add annotation: ~w on ~w~n~n~w', [Body, TargetURI, UserComment]),
 	gv_resource_commit(TargetURI,
 			   User,
-			   Comment,
+			   CommitComment,
 			   Head),
 
 	tag_link(annotation, Link),
@@ -99,13 +100,17 @@ http_remove_annotation(Request) :-
 		       description('URI of the annotation object')
 		      ]),
 		  comment(
-		      Comment,
+		      UserComment,
 		      [default(''),
 		       description('Optional motivation for a comment about the removal')])
 		]),
 	user_url(User),
-	rdf_remove_annotation(Annotation, Target),
-	gv_resource_commit(Target, User, Comment, Head),
+
+	rdf(Annotation, oa:hasBody, Body),!,
+	rdf_remove_annotation(Annotation, TargetURI),
+
+	format(atom(CommitComment), 'rm annotation: ~w on ~w~n~n~w', [Body, TargetURI, UserComment]),
+	gv_resource_commit(TargetURI, User, CommitComment, Head),
 	reply_json(json([annotation=Annotation,
 			 head=Head])).
 
