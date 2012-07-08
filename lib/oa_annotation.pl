@@ -21,7 +21,7 @@ rdf_add_annotation(Options, Annotation) :-
 	option(body(Body),     Options),
 	option(graph(Graph),   Options, 'annotations'),
 	get_time(T),
-	format_time(atom(TimeStamp), '%Y-%m-%dT%H:%M:%S%Oz', T),
+	format_time(atom(TimeStamp), '%FT%T%:z', T), % xsd:dateTime
 	KeyValue0 = [
 		     po(rdf:type, oa:'Annotation'),
 		     po(oa:annotated, literal(type(xsd:dateTime, TimeStamp))),
