@@ -14,6 +14,12 @@ rdf_add_annotation(Options, Annotation) :-
 	->  CommentPair = [ po(rdfs:comment,literal(Comment))]
 	;   CommentPair = []
 	),
+	option(unsure(Unsure),	Options, false),
+	(   Unsure == true
+	->  UnsurePair = [ po(an:unsure, literal(Unsure)) ]
+	;   UnsurePair = []
+	),
+
 	option(user(User),     Options),
 	option(label(Label),   Options),
 	option(field(Field),   Options),
@@ -32,10 +38,9 @@ rdf_add_annotation(Options, Annotation) :-
 		     po(dcterms:title, literal(Label)),
 		     po(an:annotationField, Field),
 		     po(an:typingTime, literal(type(xsd:integer, TT)))
-		     |
-		     CommentPair
 		    ],
-	sort(KeyValue0, KeyValue),
+	append([KeyValue0, CommentPair, UnsurePair], KeyValue1),
+	sort(KeyValue1, KeyValue),
 	rdf_global_term(KeyValue, Pairs),
 	variant_sha1(Pairs, Hash),
 	gv_hash_uri(Hash, Annotation),

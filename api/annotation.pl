@@ -61,6 +61,11 @@ http_add_annotation(Request) :-
 			      [default(0),
 			       description("Time it took to type in milliseconds")
 			      ]),
+		  unsure(Unsure,
+			      [default(false),
+			       boolean,
+			       description("Set to true when unsure of validity of annotation")
+			      ]),
 		  comment(UserComment,
 		      [default(''),
 		       description('Optional motivation for a comment about the annotation')
@@ -77,6 +82,7 @@ http_add_annotation(Request) :-
 			    label(Label),
 			    graph(TargetURI),
 			    comment(UserComment),
+			    unsure(Unsure),
 			    typing_time(TypingTime)
 			   ],
 			   Annotation),
