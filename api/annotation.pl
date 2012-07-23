@@ -57,6 +57,10 @@ http_add_annotation(Request) :-
 		  label(Label0,
 			[optional(true),
 			 description('Label of the annotation value')]),
+		  typing_time(TypingTime,
+			      [default(0),
+			       description("Time it took to type in milliseconds")
+			      ]),
 		  comment(UserComment,
 		      [default(''),
 		       description('Optional motivation for a comment about the annotation')
@@ -72,7 +76,8 @@ http_add_annotation(Request) :-
 			    user(User),
 			    label(Label),
 			    graph(TargetURI),
-			    comment(UserComment)
+			    comment(UserComment),
+			    typing_time(TypingTime)
 			   ],
 			   Annotation),
 

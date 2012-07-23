@@ -19,6 +19,7 @@ rdf_add_annotation(Options, Annotation) :-
 	option(field(Field),   Options),
 	option(target(Target), Options),
 	option(body(Body),     Options),
+	option(typing_time(TT),	Options, 0),
 	option(graph(Graph),   Options, 'annotations'),
 	get_time(T),
 	format_time(atom(TimeStamp), '%FT%T%:z', T), % xsd:dateTime
@@ -26,10 +27,11 @@ rdf_add_annotation(Options, Annotation) :-
 		     po(rdf:type, oa:'Annotation'),
 		     po(oa:annotated, literal(type(xsd:dateTime, TimeStamp))),
 		     po(oa:annotator, User),
+		     po(oa:hasTarget, Target),
+		     po(oa:hasBody, Body),
 		     po(dcterms:title, literal(Label)),
 		     po(an:annotationField, Field),
-		     po(oa:hasTarget, Target),
-		     po(oa:hasBody, Body)
+		     po(an:typingTime, literal(type(xsd:integer, TT)))
 		     |
 		     CommentPair
 		    ],
