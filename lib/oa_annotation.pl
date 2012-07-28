@@ -49,6 +49,16 @@ rdf_add_annotation(Options, Annotation) :-
 
 po2rdf(S,po(P,O),rdf(S,P,O)).
 
+%%	rdf_get_annotation(+Annotation, +Graph, -PropList) is det.
+%
+%	To be implemented later.
+
+rdf_get_annotation(+Annotation, +Graph, Props) :-
+	rdf(Annotation, oa:hasTarget, Target, Graph),
+	Props =
+	[ target(Target)
+	].
+
 %%	rdf_remove_annotation(+Annotation, ?Target) is det.
 %
 %	Removes Annotation on Target. Succeeds also if Annotation
