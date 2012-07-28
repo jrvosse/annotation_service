@@ -163,8 +163,8 @@ http_get_annotation(Request) :-
 %	notation.
 
 json_annotation_list(Target, FieldURI, JSON) :-
-	findall(annotation(A, Body, L, D, Comment, User),
-		(annotation_in_field(Target, FieldURI, A, Body, L, Comment, User),
+	findall(annotation(A, Body, L, D, Comment, Unsure, User),
+		(annotation_in_field(Target, FieldURI, A, Body, L, Comment, Unsure, User),
 		 tag_link(A,D)
 		),
 		Annotations),
@@ -181,9 +181,9 @@ has_annotation_field(Target, Field) :-
 
 % annotation_in_field/5 is deprecated, use annotation_in_field/7
 annotation_in_field(Target, FieldURI, Annotation, Body, Label) :-
-	annotation_in_field(Target, FieldURI, Annotation, Body, Label, _Comment, _User).
+	annotation_in_field(Target, FieldURI, Annotation, Body, Label, _Comment, _Unsure, _User).
 
-annotation_in_field(Target, FieldURI, Annotation, Body, Label, Comment, User) :-
+annotation_in_field(Target, FieldURI, Annotation, Body, Label, Comment, Unsure, User) :-
 	Graph = Target,
 	(   setting(user_restrict, true)
 	->  user_url(User)
@@ -197,6 +197,10 @@ annotation_in_field(Target, FieldURI, Annotation, Body, Label, Comment, User) :-
 	(   rdf_has_graph(Annotation, rdfs:comment, Comment0, Graph)
 	->  literal_text(Comment0, Comment)
 	;   Comment=""
+	),
+	(   rdf_has_graph(Annotation, an:unsure, Unsure0, Graph)
+	->  literal_text(Unsure0, Unsure)
+	;   Unsure=""
 	),
 	annotation_body(Body, Body0),
 	literal_text(Lit, Label).
@@ -240,6 +244,7 @@ http:convert_parameter(json_rdf_object, Atom, Term) :-
 	    label:atom,
 	    display_link:atom,
 	    comment:atom,
+	    unsure:atom,
 	    user:uri),
 	uri(value:uri) + [type=uri],
 	literal(lang:atom, value:_) + [type=literal],
