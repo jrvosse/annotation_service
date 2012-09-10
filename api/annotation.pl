@@ -75,7 +75,10 @@ http_add_annotation(Request) :-
 	user_url(User),
 	annotation_body(Body0, Body),
 	annotation_label(Label0, Body, Label),
-	rdf_add_annotation([target(TargetURI),
+	format(atom(CommitComment), 'add annotation: ~w on ~w~n~n~w', [Body, TargetURI, UserComment]),
+	with_mutex(TargetURI,
+		   (   rdf_add_annotation(
+			   [target(TargetURI),
 			    body(Body),
 			    field(FieldURI),
 			    user(User),
@@ -86,12 +89,11 @@ http_add_annotation(Request) :-
 			    typing_time(TypingTime)
 			   ],
 			   Annotation),
-
-	format(atom(CommitComment), 'add annotation: ~w on ~w~n~n~w', [Body, TargetURI, UserComment]),
-	gv_resource_commit(TargetURI,
+		       gv_resource_commit(
+			   TargetURI,
 			   User,
 			   CommitComment,
-			   Head),
+			   Head))),
 
 	tag_link(annotation, Link),
 	reply_json(json([annotation=Annotation,
@@ -117,11 +119,13 @@ http_remove_annotation(Request) :-
 		]),
 	user_url(User),
 
-	rdf(Annotation, oa:hasBody, Body),!,
-	rdf_remove_annotation(Annotation, TargetURI),
-
+	rdf(Annotation, oa:hasBody, Body),
+	rdf(Annotation, oa:hasTarget, TargetURI),
+	!,
 	format(atom(CommitComment), 'rm annotation: ~w on ~w~n~n~w', [Body, TargetURI, UserComment]),
-	gv_resource_commit(TargetURI, User, CommitComment, Head),
+	with_mutex(TargetURI,
+		   (   rdf_remove_annotation(Annotation, TargetURI),
+		       gv_resource_commit(TargetURI, User, CommitComment, Head))),
 	reply_json(json([annotation=Annotation,
 			 head=Head])).
 
