@@ -1,16 +1,25 @@
 :- module(annotation_api, []).
-% No exports: use http api or library(annotation) for access
+% No exports: use http api or library(oa_annotation) for access
 
+% HTTP:
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_parameters)).
-:- use_module(library(http/json)).
 :- use_module(library(http/http_json)).
 :- use_module(library(http/json_convert)).
+:- use_module(library(http/json)).
+
+% SemWeb:
 :- use_module(library(semweb/rdf_db)).
 :- use_module(library(semweb/rdf_label)).
-:- use_module(library(graph_version)).
+
+% ClioPatria:
 :- use_module(components(label)).
 :- use_module(user(user_db)).
+
+% Other cpacks:
+:- use_module(library(graph_version)).
+
+% This cpack:
 :- use_module(library(oa_schema)).
 :- use_module(library(oa_annotation)).
 
@@ -29,13 +38,6 @@
 :- http_handler(cliopatria(api/annotation/add),    http_add_annotation, []).
 :- http_handler(cliopatria(api/annotation/remove), http_remove_annotation, []).
 
-:- rdf_meta
-	rdf_has_graph(r,r,r,r).
-
-rdf_has_graph(S,P,O,G) :-
-	rdf_graph(G),
-	rdf_has(S,P,O,RP),
-	rdf(S,RP,O,G).
 
 %%	http_add_annotation(+Request)
 %
@@ -129,12 +131,6 @@ http_remove_annotation(Request) :-
 	reply_json(json([annotation=Annotation,
 			 head=Head])).
 
-
-
-%%	http_get_annotation(+Request)
-%
-%	Web service to get resource annotations
-
 http_get_annotation(Request) :-
 	http_parameters(Request,
 			[ target(TargetURI,
@@ -147,67 +143,27 @@ http_get_annotation(Request) :-
 				 description('URI of the annotation field')
 				])
 			]),
-	findall(Field,
-		(   Field = FieldURI,
-		    has_annotation_field(TargetURI, Field)
-		),
-		Fields0),
-	sort(Fields0, Fields),
-	findall(Field=json([annotations=JSON]),
-		(   member(Field, Fields),
-		    json_annotation_list(TargetURI, Field, JSON)
-		),
-		Annotations),
-	reply_json(json(Annotations)).
-
-
-%%	json_annotation_list(+TargetURI, +FieldURI, -Annotations)
-%
-%	Annotation is a list with annotations represented in prolog JSON
-%	notation.
-
-json_annotation_list(Target, FieldURI, JSON) :-
-	findall(annotation(A, Body, L, D, Comment, Unsure, User),
-		(annotation_in_field(Target, FieldURI, A, Body, L, Comment, Unsure, User),
-		 tag_link(A,D)
-		),
-		Annotations),
-	prolog_to_json(Annotations, JSON).
-
-%%      has_annotation_field(?Target, ?Field) is nondet.
-%
-%       Evaluates to true if there exists an Annotation
-%       on Target for Field in the most recent (eg. the head) Annotation
-%       graph for Target.
-
-has_annotation_field(Target, Field) :-
-	rdf(_Annotation, an:annotationField, Field, Target).
-
-% annotation_in_field/5 is deprecated, use annotation_in_field/7
-annotation_in_field(Target, FieldURI, Annotation, Body, Label) :-
-	annotation_in_field(Target, FieldURI, Annotation, Body, Label, _Comment, _Unsure, _User).
-
-annotation_in_field(Target, FieldURI, Annotation, Body, Label, Comment, Unsure, User) :-
-	Graph = Target,
+	Options = [annotationField(FieldURI), user(User) | Options1 ],
 	(   setting(user_restrict, true)
 	->  user_url(User)
 	;   true
 	),
-	rdf_has_graph(Annotation, oa:hasTarget, Target, Graph),
-	rdf_has_graph(Annotation, an:annotationField, FieldURI, Graph),
-	rdf_has_graph(Annotation, oa:annotator, User, Graph),
-	rdf_has_graph(Annotation, oa:hasBody, Body0, Graph),
-	rdf_has_graph(Annotation, dcterms:title, Lit, Graph),
-	(   rdf_has_graph(Annotation, rdfs:comment, Comment0, Graph)
-	->  literal_text(Comment0, Comment)
-	;   Comment=""
-	),
-	(   rdf_has_graph(Annotation, an:unsure, Unsure0, Graph)
-	->  literal_text(Unsure0, Unsure)
-	;   Unsure=""
-	),
-	annotation_body(Body, Body0),
-	literal_text(Lit, Label).
+	findall(Annotation,
+		(   rdf_get_annotation(TargetURI, TargetURI, Options),
+		    option(annotation(A), Options),
+		    tag_link(A,Link),
+		    select_option(body(Body), Options1, Options2),
+		    prolog_to_json(Body, BodyJson),
+		    Annotation = json([body(BodyJson),
+				       user(User),
+				       display_link(Link) |
+				       Options2])
+		),
+		Annotations),
+	JSON =.. [ FieldURI, json([annotations(Annotations)])],
+	reply_json(json([JSON])).
+
+
 
 annotation_body(literal(L), literal(L)) :- !.
 annotation_body(uri(URI), URI).
@@ -237,20 +193,20 @@ tag_link(Annotation,Link) :-
 	).
 
 http:convert_parameter(json_rdf_object, Atom, Term) :-
-	atom_json_term(Atom, JSON, []),
-	json_to_prolog(JSON, Term).
+        atom_json_term(Atom, JSON, []),
+        json_to_prolog(JSON, Term).
 
 
 :- json_object
-	annotation(
-	    annotation:atom,
-	    body:_,
-	    label:atom,
-	    display_link:atom,
-	    comment:atom,
-	    unsure:atom,
-	    user:uri),
-	uri(value:uri) + [type=uri],
-	literal(lang:atom, value:_) + [type=literal],
-	literal(type:atom, value:_) + [type=literal],
-	literal(value:_) + [type=literal].
+        annotation(
+            annotation:atom,
+            body:_,
+            label:atom,
+            display_link:atom,
+            comment:atom,
+            unsure:atom,
+            user:uri),
+        uri(value:uri) + [type=uri],
+        literal(lang:atom, value:_) + [type=literal],
+        literal(type:atom, value:_) + [type=literal],
+        literal(value:_) + [type=literal].
