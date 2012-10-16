@@ -97,7 +97,7 @@ http_add_annotation(Request) :-
 			   CommitComment,
 			   Head))),
 
-	tag_link(annotation, Link),
+	tag_link(Annotation, Link),
 	reply_json(json([annotation=Annotation,
 			 display_link=Link,
 			 head=Head])).
