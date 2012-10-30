@@ -82,7 +82,6 @@ http_add_annotation(Request) :-
 			    user(User),
 			    label(Label),
 			    graph(TargetURI),
-			    comment(UserComment),
 			    type(Type),
 			    typing_time(TypingTime)
 			   ],
