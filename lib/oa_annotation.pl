@@ -1,7 +1,8 @@
 :- module(oa_annotation, [
 			  rdf_has_graph/4,
 			  rdf_add_annotation/2,
-			  rdf_get_annotation/3,
+			  rdf_get_annotation/2,
+			  rdf_get_annotation_by_target/3,
 			  rdf_remove_annotation/2
 			 ]).
 
@@ -49,14 +50,22 @@ rdf_add_annotation(Options, Annotation) :-
 
 po2rdf(S,po(P,O),rdf(S,P,O)).
 
-%%	rdf_get_annotation(+Annotation, +Graph, -Props) is nondet.
+rdf_get_annotation(Annotation, Props) :-
+	get_annotation_properties(Annotation, _Graph, Props).
+
+%%	rdf_get_annotation_by_target(+Target, +Graph, -Props) is nondet.
 %
 %	Props is an option list with the properties of Annotation
 %	in Graph.
 %
 %	Hack:- You can filter on annotationField(F), user(U) by putting
 %	these in the Props as the first two properties...
-rdf_get_annotation(Target, Graph, Props) :-
+
+rdf_get_annotation_by_target(Target, Graph, Props) :-
+	rdf(Annotation, oa:hasTarget, Target, Graph),
+	get_annotation_properties(Annotation, Graph, Props).
+
+get_annotation_properties(Annotation, Graph, Props) :-
 	rdf(Annotation, oa:hasTarget, Target, Graph),
 	rdf(Annotation, an:annotationField, Field, Graph),
 	rdf_has_graph(Annotation, oa:annotator, User, Graph),
@@ -66,8 +75,12 @@ rdf_get_annotation(Target, Graph, Props) :-
 	rdf(Annotation, rdf:type, Type, Graph),
 	rdf_global_id(an:LocalType, Type),
 	Props = [
+		 % these two first, sorry!
 		 annotationField(Field),
 		 user(User),
+
+		 % then the rest...
+		 target(Target),
 		 annotation(Annotation),
 		 label(Label),
 		 body(Body),

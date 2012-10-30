@@ -138,27 +138,39 @@ http_get_annotation(Request) :-
 				 description('URI of the annotation field')
 				])
 			]),
-	Options = [annotationField(FieldURI), user(User) | Options1 ],
+	collect_annotations([TargetURI], FieldURI, Annotations),
+	maplist(enrich_annotation, Annotations, JsonAnnotations),
+	JSON =.. [ FieldURI, json([annotations(JsonAnnotations)])],
+	reply_json(json([JSON])).
+
+collect_annotations([], _, []) :- !.
+collect_annotations([TargetURI|Tail], FieldURI, AllAnnotations) :-
+	collect_target_annotation(TargetURI, FieldURI, TargetAnnotations),
+	collect_annotations(TargetAnnotations, FieldURI, MetaAnnotations),
+	collect_annotations(Tail, FieldURI, TailAnnotations),
+	append([TargetAnnotations, MetaAnnotations, TailAnnotations], AllAnnotations).
+
+collect_target_annotation(TargetURI, FieldURI, Annotations) :-
 	(   setting(user_restrict, true)
 	->  user_url(User)
 	;   true
 	),
-	findall(Annotation,
-		(   rdf_get_annotation(TargetURI, TargetURI, Options),
-		    option(annotation(A), Options),
-		    tag_link(A,Link),
-		    select_option(body(Body), Options1, Options2),
-		    prolog_to_json(Body, BodyJson),
-		    Annotation = json([body(BodyJson),
-				       user(User),
-				       display_link(Link) |
-				       Options2])
+	Options = [annotationField(FieldURI), user(User) | _Options1 ],
+
+	findall(A,
+		(   rdf_get_annotation_by_target(TargetURI, TargetURI, Options),
+		    option(annotation(A), Options)
 		),
-		Annotations),
-	JSON =.. [ FieldURI, json([annotations(Annotations)])],
-	reply_json(json([JSON])).
+		Annotations).
 
-
+enrich_annotation(A, Json) :-
+	tag_link(A,Link),
+	rdf_get_annotation(A, Options),
+	select_option(body(Body), Options, Options2),
+	prolog_to_json(Body, BodyJson),
+	Json = json([body(BodyJson),
+		     display_link(Link) |
+		     Options2]).
 
 annotation_body(literal(L), literal(L)) :- !.
 annotation_body(uri(URI), URI).
