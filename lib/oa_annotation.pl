@@ -7,8 +7,8 @@
 
 :- use_module(library(semweb/rdf_db)).
 :- use_module(library(semweb/rdf_label)).
-:- use_module(library(graph_version)).
 :- use_module(library(oa_schema)).
+:- use_module(library(graph_version)).
 
 :- rdf_meta
 	rdf_has_graph(r,r,r,r).
@@ -19,17 +19,7 @@ rdf_has_graph(S,P,O,G) :-
 	rdf(S,RP,O,G).
 
 rdf_add_annotation(Options, Annotation) :-
-	option(comment(Comment), Options),
-	(   Comment \= ''
-	->  CommentPair = [ po(rdfs:comment,literal(Comment))]
-	;   CommentPair = []
-	),
-	option(unsure(Unsure),	Options, false),
-	(   Unsure == true
-	->  UnsurePair = [ po(an:unsure, literal(Unsure)) ]
-	;   UnsurePair = []
-	),
-
+	option(type(Type),     Options),
 	option(user(User),     Options),
 	option(label(Label),   Options),
 	option(field(Field),   Options),
@@ -41,6 +31,7 @@ rdf_add_annotation(Options, Annotation) :-
 	format_time(atom(TimeStamp), '%FT%T%:z', T), % xsd:dateTime
 	KeyValue0 = [
 		     po(rdf:type, oa:'Annotation'),
+		     po(rdf:type, an:Type),
 		     po(oa:annotated, literal(type(xsd:dateTime, TimeStamp))),
 		     po(oa:annotator, User),
 		     po(oa:hasTarget, Target),
@@ -49,8 +40,7 @@ rdf_add_annotation(Options, Annotation) :-
 		     po(an:annotationField, Field),
 		     po(an:typingTime, literal(type(xsd:integer, TT)))
 		    ],
-	append([KeyValue0, CommentPair, UnsurePair], KeyValue1),
-	sort(KeyValue1, KeyValue),
+	sort(KeyValue0, KeyValue),
 	rdf_global_term(KeyValue, Pairs),
 	variant_sha1(Pairs, Hash),
 	gv_hash_uri(Hash, Annotation),
@@ -64,7 +54,7 @@ po2rdf(S,po(P,O),rdf(S,P,O)).
 %	Props is an option list with the properties of Annotation
 %	in Graph.
 %
-%	Hack:- You can filter on annotationField(F), user(U) by putting 
+%	Hack:- You can filter on annotationField(F), user(U) by putting
 %	these in the Props as the first two properties...
 rdf_get_annotation(Target, Graph, Props) :-
 	rdf(Annotation, oa:hasTarget, Target, Graph),

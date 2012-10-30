@@ -63,15 +63,11 @@ http_add_annotation(Request) :-
 			      [default(0),
 			       description("Time it took to type in milliseconds")
 			      ]),
-		  unsure(Unsure,
-			      [default(false),
-			       boolean,
-			       description("Set to true when unsure of validity of annotation")
-			      ]),
-		  comment(UserComment,
-		      [default(''),
-		       description('Optional motivation for a comment about the annotation')
-		      ])
+		  type(Type,
+			      [default(tag),
+			       atom,
+			       description("Annotation type")
+			      ])
 		]),
 
 	user_url(User),
@@ -87,7 +83,7 @@ http_add_annotation(Request) :-
 			    label(Label),
 			    graph(TargetURI),
 			    comment(UserComment),
-			    unsure(Unsure),
+			    type(Type),
 			    typing_time(TypingTime)
 			   ],
 			   Annotation),
@@ -203,8 +199,7 @@ http:convert_parameter(json_rdf_object, Atom, Term) :-
             body:_,
             label:atom,
             display_link:atom,
-            comment:atom,
-            unsure:atom,
+            type:atom,
             user:uri),
         uri(value:uri) + [type=uri],
         literal(lang:atom, value:_) + [type=literal],
