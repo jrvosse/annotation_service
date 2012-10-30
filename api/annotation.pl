@@ -73,7 +73,7 @@ http_add_annotation(Request) :-
 	user_url(User),
 	annotation_body(Body0, Body),
 	annotation_label(Label0, Body, Label),
-	format(atom(CommitComment), 'add annotation: ~w on ~w~n~n~w', [Body, TargetURI, UserComment]),
+	format(atom(CommitComment), 'add annotation: ~w on ~w~n~n', [Body, TargetURI]),
 	with_mutex(TargetURI,
 		   (   rdf_add_annotation(
 			   [target(TargetURI),
