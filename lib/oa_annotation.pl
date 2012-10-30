@@ -62,24 +62,16 @@ rdf_get_annotation(Target, Graph, Props) :-
 	rdf_has_graph(Annotation, oa:annotator, User, Graph),
 	rdf_has_graph(Annotation, oa:hasBody, Body, Graph),
 	rdf_has_graph(Annotation, dcterms:title, Lit, Graph),
-	(   rdf_has_graph(Annotation, rdfs:comment, Comment0, Graph)
-	->  literal_text(Comment0, Comment)
-	;   Comment=''
-	),
-	(   rdf_has_graph(Annotation, an:unsure, Unsure0, Graph)
-	->  literal_text(Unsure0, Unsure)
-	;   Unsure=''
-	),
 	literal_text(Lit, Label),
-
+	rdf(Annotation, rdf:type, Type, Graph),
+	rdf_global_id(an:LocalType, Type),
 	Props = [
 		 annotationField(Field),
 		 user(User),
 		 annotation(Annotation),
-		 comment(Comment),
-		 unsure(Unsure),
 		 label(Label),
-		 body(Body)
+		 body(Body),
+		 type(LocalType)
 	].
 
 %%	rdf_remove_annotation(+Annotation, ?Target) is det.
