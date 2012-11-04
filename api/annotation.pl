@@ -90,13 +90,10 @@ http_add_annotation(Request) :-
 			   TargetURI,
 			   User,
 			   CommitComment,
-			   Head))),
+			   _Head))),
 
-	tag_link(Annotation, Link),
-	reply_json(json([annotation=Annotation,
-			 display_link=Link,
-			 head=Head])).
-
+	enrich_annotation(Annotation, Json),
+	reply_json(Json).
 
 %%	http_remove_annotation(+Request)
 %
