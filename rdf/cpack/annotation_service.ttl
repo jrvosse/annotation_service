@@ -11,7 +11,7 @@
 # this.  Otherwise you can specify the information inline as done below.
 # See http://xmlns.com/foaf/spec/ for defines fields.
 
-<> a cpack:Package ;
+<> a cpack:API ;
 	cpack:packageName "annotation_service" ;
 	dcterms:title "Configurable RDF annotation webservice" ;
 	cpack:author [ a foaf:Person ;
