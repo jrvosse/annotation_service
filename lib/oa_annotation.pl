@@ -1,7 +1,7 @@
 :- module(oa_annotation, [
 			  rdf_add_annotation/2,
 			  rdf_get_annotation/2,
-			  rdf_get_annotation_by_target/3,
+			  rdf_get_annotation_by_tfa/5,
 			  rdf_remove_annotation/2,
 			  rdf_has_graph/4
 			 ]).
@@ -21,8 +21,19 @@ literal body tags.
 :- use_module(library(graph_version)).
 
 :- rdf_meta
+	normalize_property(r,o),
+	normalize_object(r,o,o),
 	rdf_has_graph(r,r,r,r).
 
+normalize_property(Property, NormalizedProperty) :-
+	rdf_global_id(_NS:NormalizedProperty, Property),!.
+
+
+normalize_object(Object, type, NormalizedObject) :-
+	rdf_global_id(_NS:NormalizedObject, Object),!.
+
+normalize_object(Object, _NormalizedProperty, NormalizedObject) :-
+	literal_text(Object, NormalizedObject), !.
 
 %%	rdf_add_annotation(+Options:list, -Annotation:url) is det.
 %
@@ -112,39 +123,28 @@ po2rdf(S,po(P,O),rdf(S,P,O)).
 rdf_get_annotation(Annotation, Props) :-
 	get_annotation_properties(Annotation, _Graph, Props).
 
-%%	rdf_get_annotation_by_target(+Target:uri, +Graph:uri,-Props:list) is nondet.
+%%	rdf_get_annotation_properties(+An:uri,+Grph:uri,-Props:list) is
+%	nondet.
 %
 %	Props is an option list with the properties of Annotation
 %	in Graph.
 %
-%	Hack:- You can filter on annotationField(F), user(U) by putting
-%	these in the Props as the first two properties...
 
-rdf_get_annotation_by_target(Target, Graph, Props) :-
+rdf_get_annotation_by_tfa(Target, Field, Annotator, Graph, [annotation(Annotation)|Props]) :-
 	rdf(Annotation, oa:hasTarget, Target, Graph),
+	rdf(Annotation, an:annotationField, Field, Graph),
+	rdf_has_graph(Annotation, oa:annotator, Annotator, Graph),
 	get_annotation_properties(Annotation, Graph, Props).
 
 get_annotation_properties(Annotation, Graph, Props) :-
-	rdf(Annotation, oa:hasTarget, Target, Graph),
-	rdf(Annotation, an:annotationField, Field, Graph),
-	rdf_has_graph(Annotation, oa:annotator, User, Graph),
-	rdf_has_graph(Annotation, oa:hasBody, Body, Graph),
-	rdf_has_graph(Annotation, dcterms:title, Lit, Graph),
-	literal_text(Lit, Label),
-	rdf(Annotation, rdf:type, Type, Graph),
-	rdf_global_id(an:LocalType, Type),
-	Props = [
-		 % these two first, sorry!
-		 annotationField(Field),
-		 user(User),
+	findall(P,
+		(   rdf_has_graph(Annotation, Property, Object, Graph),
+		    normalize_property(Property, PName),
+		    normalize_object(Object, PName, NormalizedObject),
+		    P =.. [PName, NormalizedObject]
+		),
+		Props).
 
-		 % then the rest...
-		 target(Target),
-		 annotation(Annotation),
-		 label(Label),
-		 body(Body),
-		 type(LocalType)
-	].
 
 %%	rdf_remove_annotation(+Annotation:url, ?Target:url) is det.
 %

@@ -45,7 +45,7 @@
 
 http_add_annotation(Request) :-
 	http_parameters(Request,
-		[ target(TargetURI,
+		[ hasTarget(TargetURI,
 		     [uri,
 		      description('URI of the object that is annotated')
 		     ]),
@@ -53,7 +53,7 @@ http_add_annotation(Request) :-
 			[uri,
 			 description('URI of the annotation field')
 			]),
-		  body(Body0,
+		  hasBody(Body0,
 		       [json_rdf_object,
 			description('Body of the annotation')]),
 		  label(Label0,
@@ -125,7 +125,7 @@ http_remove_annotation(Request) :-
 
 http_get_annotation(Request) :-
 	http_parameters(Request,
-			[ target(TargetURI,
+			[ hasTarget(TargetURI,
 				 [uri,
 				  description('URI of the annotation target')
 				 ]),
@@ -152,10 +152,9 @@ collect_target_annotation(TargetURI, FieldURI, Annotations) :-
 	->  user_url(User)
 	;   true
 	),
-	Options = [annotationField(FieldURI), user(User) | _Options1 ],
 
 	findall(A,
-		(   rdf_get_annotation_by_target(TargetURI, TargetURI, Options),
+		(   rdf_get_annotation_by_tfa(TargetURI, FieldURI, User, _Graph, Options),
 		    option(annotation(A), Options)
 		),
 		Annotations).
@@ -164,9 +163,9 @@ enrich_annotation(A, Json) :-
 	tag_link(A,Link),
 	rdf_get_annotation(A, AnOptions),
 	screen_name(AnOptions, ScreenName),
-	select_option(body(Body), AnOptions, AnOptions1),
+	select_option(hasBody(Body), AnOptions, AnOptions1),
 	prolog_to_json(Body, BodyJson),
-	Json = json([body(BodyJson),
+	Json = json([hasBody(BodyJson),
 		     screenName(ScreenName),
 		     display_link(Link) |
 		     AnOptions1]).
@@ -200,8 +199,8 @@ tag_link(Annotation,Link) :-
 
 screen_name(Annotation, ScreenName) :-
 	rdf_equal(user:anonymous, Anonymous),
-	option(user(User), Annotation, Anonymous),
-	iri_xml_namespace(User, _, ScreenName).
+	option(annotator(Annotator), Annotation, Anonymous),
+	iri_xml_namespace(Annotator, _, ScreenName).
 
 http:convert_parameter(json_rdf_object, Atom, Term) :-
         atom_json_term(Atom, JSON, []),
