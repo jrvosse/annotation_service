@@ -166,6 +166,7 @@ enrich_annotation(A, Json) :-
 	select_option(hasBody(Body), AnOptions, AnOptions1),
 	prolog_to_json(Body, BodyJson),
 	Json = json([hasBody(BodyJson),
+		     annotation(A),
 		     screenName(ScreenName),
 		     display_link(Link) |
 		     AnOptions1]).
