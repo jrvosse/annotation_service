@@ -138,7 +138,7 @@ rdf_get_annotation_by_tfa(Target, Field, Annotator, Graph, [annotation(Annotatio
 
 get_annotation_properties(Annotation, Graph, Props) :-
 	findall(P,
-		(   rdf_has_graph(Annotation, Property, Object, Graph),
+		(   rdf(Annotation, Property, Object, Graph),
 		    normalize_property(Property, PName),
 		    normalize_object(Object, PName, NormalizedObject),
 		    P =.. [PName, NormalizedObject]
