@@ -161,15 +161,16 @@ collect_target_annotation(TargetURI, FieldURI, Annotations) :-
 
 enrich_annotation(A, Json) :-
 	tag_link(A,Link),
-	rdf_get_annotation(A, AnOptions),
-	screen_name(AnOptions, ScreenName),
-	select_option(hasBody(Body), AnOptions, AnOptions1),
-	prolog_to_json(Body, BodyJson),
-	Json = json([hasBody(BodyJson),
-		     annotation(A),
+	rdf_get_annotation(A, AnOptions1),
+	screen_name(AnOptions1, ScreenName),
+	select_option(hasBody(Body), AnOptions1, AnOptions),
+	prolog_to_json(Body, JsonBody),
+	Json = json([annotation(A),
+		     hasBody(JsonBody),
 		     screenName(ScreenName),
 		     display_link(Link) |
-		     AnOptions1]).
+		     AnOptions]).
+
 
 annotation_body(literal(L), literal(L)) :- !.
 annotation_body(uri(URI), URI).
@@ -211,7 +212,7 @@ http:convert_parameter(json_rdf_object, Atom, Term) :-
 :- json_object
         annotation(
             annotation:atom,
-            body:_,
+            hasBody:_,
             label:atom,
             display_link:atom,
             type:atom,

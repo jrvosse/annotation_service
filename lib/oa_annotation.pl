@@ -29,11 +29,18 @@ normalize_property(Property, NormalizedProperty) :-
 	rdf_global_id(_NS:NormalizedProperty, Property),!.
 
 
+normalize_object(Object, hasBody, Object) :-
+	rdf_is_literal(Object),
+	!.
+normalize_object(Object, hasBody, uri(Object)) :-
+	rdf_is_resource(Object),
+	!.
 normalize_object(Object, type, NormalizedObject) :-
-	rdf_global_id(_NS:NormalizedObject, Object),!.
-
+	rdf_global_id(_NS:NormalizedObject, Object),
+	!.
 normalize_object(Object, _NormalizedProperty, NormalizedObject) :-
-	literal_text(Object, NormalizedObject), !.
+	literal_text(Object, NormalizedObject),
+	!.
 
 %%	rdf_add_annotation(+Options:list, -Annotation:url) is det.
 %
@@ -123,18 +130,16 @@ po2rdf(S,po(P,O),rdf(S,P,O)).
 rdf_get_annotation(Annotation, Props) :-
 	get_annotation_properties(Annotation, _Graph, Props).
 
-%%	rdf_get_annotation_properties(+An:uri,+Grph:uri,-Props:list) is
-%	nondet.
-%
-%	Props is an option list with the properties of Annotation
-%	in Graph.
-%
-
 rdf_get_annotation_by_tfa(Target, Field, Annotator, Graph, [annotation(Annotation)|Props]) :-
 	rdf(Annotation, oa:hasTarget, Target, Graph),
 	rdf(Annotation, an:annotationField, Field, Graph),
 	rdf_has_graph(Annotation, oa:annotator, Annotator, Graph),
 	get_annotation_properties(Annotation, Graph, Props).
+
+%%	rdf_get_annotation_properties(+An:uri,+Grph:uri,-Props:list) is nondet.
+%
+%	Props is an option list with the properties of Annotation
+%	in Graph.
 
 get_annotation_properties(Annotation, Graph, Props) :-
 	findall(P,
