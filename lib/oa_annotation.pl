@@ -37,7 +37,9 @@ normalize_object(Object, hasBody, uri(Object)) :-
 	!.
 normalize_object(Object, type, NormalizedObject) :-
 	rdf_global_id(_NS:NormalizedObject, Object),
-	!.
+	!,
+	NormalizedObject \= 'Annotation'.
+
 normalize_object(Object, _NormalizedProperty, NormalizedObject) :-
 	literal_text(Object, NormalizedObject),
 	!.
