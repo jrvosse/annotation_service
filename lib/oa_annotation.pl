@@ -73,11 +73,11 @@ normalize_object(Object, _NormalizedProperty, NormalizedObject) :-
 %	up the annotation, and then passing this hash to gv_hash_uri/2
 %	to create the final uri.
 %
-%       Note that if no
-%	timestamp is given, each call to this predicate with the same
-%	parameters will intentionally yield a new annotation with a new
-%	uri (because the changing current time will be part of the hash
-%	that is used to create the uri of Annotation).
+%	Note that if no timestamp is given, each call to this predicate
+%	with the same parameters will intentionally yield a new
+%	annotation with a new uri (because the changing current time
+%	will be part of the hash that is used to create the uri of
+%	Annotation).
 
 rdf_add_annotation(Options, Annotation) :-
 	option(target(Target), Options),
@@ -120,7 +120,9 @@ rdf_add_annotation(Options, Annotation) :-
 	variant_sha1(Pairs, Hash),
 	gv_hash_uri(Hash, Annotation),
 	maplist(po2rdf(Annotation),Pairs,Triples),
-	gv_graph_triples(Graph, Triples).
+	rdf_transaction(
+	    forall(member(rdf(S,P,O), Triples),
+		   rdf_assert(S,P,O, Graph))).
 
 po2rdf(S,po(P,O),rdf(S,P,O)).
 
