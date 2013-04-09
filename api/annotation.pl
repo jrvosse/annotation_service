@@ -25,8 +25,9 @@
 
 
 :- setting(login, boolean, true, 'Require login').
+:- setting(track, boolean, true, 'Version track annotations using graph_version cpack').
 :- setting(user_restrict, boolean, false,
-	   'When set to true only own annotations are shown.').
+	   'When set to true only user\'s own annotations are shown.').
 :- setting(link_tags, boolean, true,
 	   'When set to true tags are hyperlinked to their annotation objects in the UI.').
 
@@ -86,7 +87,7 @@ http_add_annotation(Request) :-
 			    typing_time(TypingTime)
 			   ],
 			   Annotation),
-		       gv_resource_commit(
+		       commit_when_needed(
 			   TargetURI,
 			   User,
 			   CommitComment,
@@ -119,7 +120,7 @@ http_remove_annotation(Request) :-
 	format(atom(CommitComment), 'rm annotation: ~w on ~w~n~n~w', [Body, TargetURI, UserComment]),
 	with_mutex(TargetURI,
 		   (   rdf_remove_annotation(Annotation, TargetURI),
-		       gv_resource_commit(TargetURI, User, CommitComment, Head))),
+		       commit_when_needed(TargetURI, User, CommitComment, Head))),
 	reply_json(json([annotation=Annotation,
 			 head=Head])).
 
@@ -139,6 +140,12 @@ http_get_annotation(Request) :-
 	maplist(enrich_annotation, Annotations, JsonAnnotations),
 	JSON =.. [ FieldURI, json([annotations(JsonAnnotations)])],
 	reply_json(json([JSON])).
+
+commit_when_needed(NamedGraph, User, Comment, Head) :-
+	(   setting(track, true)
+	->  gv_resource_commit(NamedGraph, User, Comment, Head)
+	;   true
+	).
 
 collect_annotations([], _, []) :- !.
 collect_annotations([TargetURI|Tail], FieldURI, AllAnnotations) :-
