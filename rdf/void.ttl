@@ -12,6 +12,10 @@
   vann:preferredNamespaceUri "http://www.w3.org/ns/openannotation/core/";
 ] .
 
+[ vann:preferredNamespacePrefix "ann_ui" ;
+  vann:preferredNamespaceUri "http://semanticweb.cs.vu.nl/annotate/ui/"
+] .
+
 <oa_compat>
 	a void:Dataset ;
 	dcterms:title "Backward compatibility triples for oa namespace updates";
