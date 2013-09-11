@@ -9,7 +9,7 @@ Prolog.
 */
 
 % Namespace for package-specific extensions:
-:- rdf_register_ns(an,  'http://semanticweb.cs.vu.nl/annotate/').
+:- rdf_register_ns(ann_ui,  'http://semanticweb.cs.vu.nl/annotate/ui/').
 
 % Namespace for old open annotation model:
 :- rdf_register_ns(oac, 'http://www.openannotation.org/ns/').

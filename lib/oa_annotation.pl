@@ -90,7 +90,7 @@ rdf_add_annotation(Options, Annotation) :-
 	(   option(type(Type), Options)
 	->  (  uri_is_global(Type)
 	    ->	QType = Type
-	    ;	QType = an:Type
+	    ;	QType = ann_ui:Type
 	    )
 	;   QType = oax:'Tag'
 	),
@@ -112,8 +112,8 @@ rdf_add_annotation(Options, Annotation) :-
 		     po(oa:hasTarget, Target),
 		     po(oa:hasBody, Body),
 		     po(dcterms:title, literal(Label)),
-		     po(an:annotationField, Field),
-		     po(an:typingTime, literal(type(xsd:integer, TT)))
+		     po(ann_ui:annotationField, Field),
+		     po(ann_ui:typingTime, literal(type(xsd:integer, TT)))
 		    ],
 	sort(KeyValue0, KeyValue),
 	rdf_global_term(KeyValue, Pairs),
@@ -136,7 +136,7 @@ rdf_get_annotation(Annotation, Props) :-
 
 rdf_get_annotation_by_tfa(Target, Field, Annotator, Graph, [annotation(Annotation)|Props]) :-
 	rdf(Annotation, oa:hasTarget, Target, Graph),
-	rdf(Annotation, an:annotationField, Field, Graph),
+	rdf(Annotation, ann_ui:annotationField, Field, Graph),
 	rdf_has_graph(Annotation, oa:annotator, Annotator, Graph),
 	get_annotation_properties(Annotation, Graph, Props).
 
