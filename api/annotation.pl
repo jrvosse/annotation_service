@@ -189,7 +189,7 @@ user_url(User) :-
 	    user_property(U, url(User))
         ;   logged_on(U)
 	->  user_property(U, url(User))
-	;   rdf_global_id(an:anonymous, User)
+	;   rdf_global_id(user:anonymous, User)
         ).
 
 
