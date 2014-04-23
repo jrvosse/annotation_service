@@ -5,6 +5,7 @@
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_parameters)).
 :- use_module(library(http/http_json)).
+:- use_module(library(http/json)).
 :- use_module(library(http/json_convert)).
 :- use_module(library(http/json)).
 
@@ -64,14 +65,18 @@ http_add_annotation(Request) :-
 			      [default(0),
 			       description("Time it took to type in milliseconds")
 			      ]),
+		  shape(Shape,
+			[optional(true)
+			]),
 		  type(Type,
 			      [default(tag),
 			       atom,
 			       description("Annotation type")
 			      ])
 		]),
-
+	atom_json_dict(Shape,ShapeDict,[]),
 	user_url(User),
+
 	annotation_body(Body0, Body),
 	annotation_label(Label0, Body, Label),
 	format(atom(CommitComment), 'add annotation: ~w on ~w~n~n', [Body, TargetURI]),
@@ -84,6 +89,7 @@ http_add_annotation(Request) :-
 			    label(Label),
 			    graph(TargetURI),
 			    type(Type),
+			    shape(ShapeDict),
 			    typing_time(TypingTime)
 			   ],
 			   Annotation),
@@ -168,15 +174,16 @@ collect_target_annotation(TargetURI, FieldURI, Annotations) :-
 
 enrich_annotation(A, Json) :-
 	tag_link(A,Link),
-	rdf_get_annotation(A, AnOptions1),
-	screen_name(AnOptions1, ScreenName),
-	select_option(hasBody(Body), AnOptions1, AnOptions),
+	rdf_get_annotation(A, AnOptions),
+	screen_name(AnOptions, ScreenName),
+	select_option(hasBody(Body), AnOptions, AnOptions1),
 	prolog_to_json(Body, JsonBody),
+
 	Json = json([annotation(A),
 		     hasBody(JsonBody),
 		     screenName(ScreenName),
 		     display_link(Link) |
-		     AnOptions]).
+		     AnOptions1]).
 
 
 annotation_body(literal(L), literal(L)) :- !.

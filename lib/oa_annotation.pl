@@ -25,6 +25,7 @@ literal body tags.
 	normalize_object(r,o,o),
 	rdf_has_graph(r,r,r,r).
 
+
 normalize_property(Property, NormalizedProperty) :-
 	rdf_global_id(_NS:NormalizedProperty, Property),!.
 
@@ -34,6 +35,14 @@ normalize_object(Object, hasBody, Object) :-
 	!.
 normalize_object(Object, hasBody, uri(Object)) :-
 	rdf_is_resource(Object),
+	!.
+normalize_object(Bnode, hasTarget, TargetDict) :-
+	rdf_is_bnode(Bnode),
+	rdf(Bnode, oa:hasSource, Source),
+	rdf(Bnode, oa:hasSelector, SelectorBnode),
+	rdf(SelectorBnode, rdf:value, literal(Value)),
+	SelectorDict = selector{value:Value},
+	TargetDict = target{hasSource:Source,hasSelector:SelectorDict},
 	!.
 normalize_object(Object, type, NormalizedObject) :-
 	rdf_global_id(_NS:NormalizedObject, Object),
@@ -80,13 +89,15 @@ normalize_object(Object, _NormalizedProperty, NormalizedObject) :-
 %	Annotation).
 
 rdf_add_annotation(Options, Annotation) :-
-	option(target(Target), Options),
-	option(body(Body),     Options),
-
+	option(target(Target),  Options),
+	option(body(Body),      Options),
 	option(user(User),      Options, user:anonymous),
 	option(field(Field),    Options, dcterms:subject),
 	option(typing_time(TT),	Options, 0),
 	option(graph(Graph),    Options, 'annotations'),
+	option(shape(Shape),	Options, shape{}),
+
+
 	(   option(type(Type), Options)
 	->  (  uri_is_global(Type)
 	    ->	QType = Type
@@ -101,15 +112,27 @@ rdf_add_annotation(Options, Annotation) :-
 	),
 	option(label(Label),    Options, DefaultLabel),
 
-	get_time(T),
-	format_time(atom(DefaultTimeStamp), '%FT%T%:z', T), % xsd:dateTime
+	get_time(Time),
+	format_time(atom(DefaultTimeStamp), '%FT%T%:z', Time), % xsd:dateTime
 	option(timestamp(TimeStamp), Options, DefaultTimeStamp),
+
+	format(atom(Fragment), '#xywh=percent:~0f,~0f,~0f,~0f',
+	       [100*Shape.x,     100*Shape.y,
+		100*Shape.width, 100*Shape.height]),
+	rdf_bnode(TargetBnode),
+	rdf_bnode(Selector),
+	rdf_assert(Selector, rdf:type, oa:'FragmentSelector', Graph),
+	rdf_assert(Selector, rdf:value, literal(Fragment), Graph),
+	rdf_assert(Selector, dcterms:conformsTo, 'http://www.w3.org/TR/media-frags/', Graph),
+	rdf_assert(TargetBnode, rdf:type,oa:'SpecificResource', Graph),
+	rdf_assert(TargetBnode, oa:hasSource, Target, Graph),
+	rdf_assert(TargetBnode, oa:hasSelector, Selector, Graph),
 	KeyValue0 = [
 		     po(rdf:type, oa:'Annotation'),
 		     po(rdf:type, QType),
 		     po(oa:annotated, literal(type(xsd:dateTime, TimeStamp))),
 		     po(oa:annotator, User),
-		     po(oa:hasTarget, Target),
+		     po(oa:hasTarget, TargetBnode),
 		     po(oa:hasBody, Body),
 		     po(dcterms:title, literal(Label)),
 		     po(ann_ui:annotationField, Field),
@@ -121,7 +144,7 @@ rdf_add_annotation(Options, Annotation) :-
 	gv_hash_uri(Hash, Annotation),
 	maplist(po2rdf(Annotation),Pairs,Triples),
 	rdf_transaction(
-	    forall(member(rdf(S,P,O), Triples),
+	     forall(member(rdf(S,P,O), Triples),
 		   rdf_assert(S,P,O, Graph))).
 
 po2rdf(S,po(P,O),rdf(S,P,O)).
