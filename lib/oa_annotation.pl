@@ -1,10 +1,11 @@
 :- module(oa_annotation, [
-			  rdf_add_annotation/2,
-			  rdf_get_annotation/2,
-			  rdf_get_annotation_by_tfa/5,
-			  rdf_remove_annotation/2,
-			  rdf_has_graph/4
-			 ]).
+	      rdf_add_annotation/2,
+	      rdf_get_annotation/2,
+	      rdf_get_annotation_target/2,
+	      rdf_get_annotation_by_tfa/5,
+	      rdf_remove_annotation/2,
+	      rdf_has_graph/4
+	  ]).
 /** <module> Open Annotation Prolog API
 
 Some simple predicates to create, get and remove open annotation
@@ -157,6 +158,16 @@ po2rdf(S,po(P,O),rdf(S,P,O)).
 rdf_get_annotation(Annotation, Props) :-
 	get_annotation_properties(Annotation, _Graph, Props).
 
+%%	rdf_get_annotation_target(+Annotation, ?TargetUri) is det.
+%
+%	Get Target uri, abstracting away OA selector stuff
+rdf_get_annotation_target(Annotation, TargetUri) :-
+	rdf(Annotation, oa:hasTarget, T),
+	(   rdf_is_bnode(T)
+	->  rdf(T, oa:hasSource, TargetUri)
+	;   T = TargetUri
+	).
+
 rdf_get_annotation_by_tfa(Target, Field, Annotator, Graph, [annotation(Annotation)|Props]) :-
 	rdf(Annotation, oa:hasTarget, Target, Graph),
 	rdf(Annotation, ann_ui:annotationField, Field, Graph),
@@ -191,10 +202,29 @@ get_annotation_properties(Annotation, Graph, Props) :-
 %	does not exists.
 
 rdf_remove_annotation(Annotation, Target) :-
-	(   rdf(Annotation, oa:hasTarget, Target, Target)
-	->  rdf_retractall(Annotation, _, _, Target)
+	(   (rdf(Annotation, oa:hasTarget, Target, Target)
+	    ;
+	    (	rdf(TargetBnode, oa:hasSource, Target, Target),
+		rdf(Annotation, oa:hasTarget, TargetBnode, Target)
+	    )
+	    )
+	->  rdf_remove_annotation_brefs(Annotation, Target),
+	    rdf_retractall(Annotation, _, _, Target)
 	;   true
 	).
+
+
+rdf_remove_annotation_brefs(Annotation, Graph) :-
+	findall(rdf(Annotation,P,O,Graph),
+		(   rdf(Annotation, P, O, Graph),
+		    rdf_is_bnode(O)
+		),
+		BnodeTriples),
+	forall(member(rdf(S,P,O,G), BnodeTriples),
+	       (   rdf_remove_annotation_brefs(O,G),
+		   rdf_retractall(S,P,O,G)
+	       )).
+
 
 %%	rdf_has_graph(Subject, SuperProperty, Object, Graph) is nondet.
 %
