@@ -163,6 +163,13 @@ rdf_get_annotation_by_tfa(Target, Field, Annotator, Graph, [annotation(Annotatio
 	rdf_has_graph(Annotation, oa:annotator, Annotator, Graph),
 	get_annotation_properties(Annotation, Graph, Props).
 
+rdf_get_annotation_by_tfa(Target, Field, Annotator, Graph, [annotation(Annotation)|Props]) :-
+	rdf(TargetBnode, oa:hasSource, Target, Graph),
+	rdf(Annotation, oa:hasTarget, TargetBnode, Graph),
+	rdf(Annotation, ann_ui:annotationField, Field, Graph),
+	rdf_has_graph(Annotation, oa:annotator, Annotator, Graph),
+	get_annotation_properties(Annotation, Graph, Props).
+
 %%	rdf_get_annotation_properties(+An:uri,+Grph:uri,-Props:list) is nondet.
 %
 %	Props is an option list with the properties of Annotation
