@@ -47,9 +47,9 @@
 
 http_add_annotation(Request) :-
 	http_parameters(Request,
-		[ hasTarget(TargetURI,
-		     [uri,
-		      description('URI of the object that is annotated')
+		[ hasTarget(TargetObject,
+		     [optional(false),
+		      description('URI (or complex target object) of the resource that is annotated')
 		     ]),
 		  field(FieldURI,
 			[uri,
@@ -65,31 +65,33 @@ http_add_annotation(Request) :-
 			      [default(0),
 			       description("Time it took to type in milliseconds")
 			      ]),
-		  shape(Shape,
-			[optional(true)
-			]),
 		  type(Type,
 			      [default(tag),
 			       atom,
 			       description("Annotation type")
 			      ])
 		]),
-	atom_json_dict(Shape,ShapeDict,[]),
 	user_url(User),
+	(   atom_json_dict(TargetObject,TargetDict,[])
+	    -> atom_string(TargetURI,TargetDict.hasSource)
+	    ;  (TargetDict = target{'@id':TargetObject} ,
+	        TargetURI  = TargetObject
+	       )
+	),
+
 
 	annotation_body(Body0, Body),
 	annotation_label(Label0, Body, Label),
 	format(atom(CommitComment), 'add annotation: ~w on ~w~n~n', [Body, TargetURI]),
 	with_mutex(TargetURI,
 		   (   rdf_add_annotation(
-			   [target(TargetURI),
+			   [target(TargetDict),
 			    body(Body),
 			    field(FieldURI),
 			    user(User),
 			    label(Label),
 			    graph(TargetURI),
 			    type(Type),
-			    shape(ShapeDict),
 			    typing_time(TypingTime)
 			   ],
 			   Annotation),

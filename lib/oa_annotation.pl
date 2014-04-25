@@ -42,7 +42,11 @@ normalize_object(Bnode, hasTarget, TargetDict) :-
 	rdf(Bnode, oa:hasSource, Source),
 	rdf(Bnode, oa:hasSelector, SelectorBnode),
 	rdf(SelectorBnode, rdf:value, literal(Value)),
-	SelectorDict = selector{value:Value},
+	rdf(SelectorBnode, oa:x, literal(type(_,X))),
+	rdf(SelectorBnode, oa:y, literal(type(_,Y))),
+	rdf(SelectorBnode, oa:w, literal(type(_,W))),
+	rdf(SelectorBnode, oa:h, literal(type(_,H))),
+	SelectorDict = selector{value:Value,x:X,y:Y,w:W,h:H},
 	TargetDict = target{hasSource:Source,hasSelector:SelectorDict},
 	!.
 normalize_object(Object, type, NormalizedObject) :-
@@ -90,14 +94,12 @@ normalize_object(Object, _NormalizedProperty, NormalizedObject) :-
 %	Annotation).
 
 rdf_add_annotation(Options, Annotation) :-
-	option(target(Target),  Options),
 	option(body(Body),      Options),
 	option(user(User),      Options, user:anonymous),
 	option(field(Field),    Options, dcterms:subject),
 	option(typing_time(TT),	Options, 0),
 	option(graph(Graph),    Options, 'annotations'),
-	option(shape(Shape),	Options, shape{}),
-
+	option(target(TargetDict),  Options),
 
 	(   option(type(Type), Options)
 	->  (  uri_is_global(Type)
@@ -117,23 +119,32 @@ rdf_add_annotation(Options, Annotation) :-
 	format_time(atom(DefaultTimeStamp), '%FT%T%:z', Time), % xsd:dateTime
 	option(timestamp(TimeStamp), Options, DefaultTimeStamp),
 
-	format(atom(Fragment), '#xywh=percent:~0f,~0f,~0f,~0f',
-	       [100*Shape.x,     100*Shape.y,
-		100*Shape.width, 100*Shape.height]),
-	rdf_bnode(TargetBnode),
-	rdf_bnode(Selector),
-	rdf_assert(Selector, rdf:type, oa:'FragmentSelector', Graph),
-	rdf_assert(Selector, rdf:value, literal(Fragment), Graph),
-	rdf_assert(Selector, dcterms:conformsTo, 'http://www.w3.org/TR/media-frags/', Graph),
-	rdf_assert(TargetBnode, rdf:type,oa:'SpecificResource', Graph),
-	rdf_assert(TargetBnode, oa:hasSource, Target, Graph),
-	rdf_assert(TargetBnode, oa:hasSelector, Selector, Graph),
+	(   SelectorDict = TargetDict.get(hasSelector)
+	->  Shape = SelectorDict.value,
+	    format(atom(Fragment), '#xywh=percent:~0f,~0f,~0f,~0f',
+		   [100*Shape.x,     100*Shape.y,
+		    100*Shape.width, 100*Shape.height]),
+	    atom_string(TargetUri, TargetDict.hasSource),
+	    rdf_bnode(TargetNode),
+	    rdf_bnode(SelectorNode),
+	    rdf_assert(SelectorNode, rdf:type, oa:'FragmentSelector', Graph),
+	    rdf_assert(SelectorNode, rdf:value, literal(Fragment), Graph),
+	    rdf_assert(SelectorNode, dcterms:conformsTo, 'http://www.w3.org/TR/media-frags/', Graph),
+	    rdf_assert(SelectorNode, oa:x, literal(type(xsd:float, Shape.x))),
+	    rdf_assert(SelectorNode, oa:y, literal(type(xsd:float, Shape.y))),
+	    rdf_assert(SelectorNode, oa:w, literal(type(xsd:float, Shape.width))),
+	    rdf_assert(SelectorNode, oa:h, literal(type(xsd:float, Shape.height))),
+	    rdf_assert(TargetNode, rdf:type,oa:'SpecificResource', Graph),
+	    rdf_assert(TargetNode, oa:hasSource, TargetUri, Graph),
+	    rdf_assert(TargetNode, oa:hasSelector, SelectorNode, Graph)
+	;   TargetNode = TargetDict.get('@id')
+	),
 	KeyValue0 = [
 		     po(rdf:type, oa:'Annotation'),
 		     po(rdf:type, QType),
 		     po(oa:annotated, literal(type(xsd:dateTime, TimeStamp))),
 		     po(oa:annotator, User),
-		     po(oa:hasTarget, TargetBnode),
+		     po(oa:hasTarget, TargetNode),
 		     po(oa:hasBody, Body),
 		     po(dcterms:title, literal(Label)),
 		     po(ann_ui:annotationField, Field),
@@ -145,8 +156,8 @@ rdf_add_annotation(Options, Annotation) :-
 	gv_hash_uri(Hash, Annotation),
 	maplist(po2rdf(Annotation),Pairs,Triples),
 	rdf_transaction(
-	     forall(member(rdf(S,P,O), Triples),
-		   rdf_assert(S,P,O, Graph))).
+	     (	 forall(member(rdf(S,P,O), Triples),
+			rdf_assert(S,P,O, Graph)))).
 
 po2rdf(S,po(P,O),rdf(S,P,O)).
 
