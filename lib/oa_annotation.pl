@@ -17,6 +17,7 @@ literal body tags.
 @license LGPL
 */
 :- use_module(library(semweb/rdf_db)).
+:- use_module(library(semweb/rdfs)).
 :- use_module(library(semweb/rdf_label)).
 :- use_module(library(oa_schema)).
 :- use_module(library(graph_version)).
@@ -37,17 +38,20 @@ normalize_object(Object, hasBody, Object) :-
 normalize_object(Object, hasBody, uri(Object)) :-
 	rdf_is_resource(Object),
 	!.
-normalize_object(Bnode, hasTarget, TargetDict) :-
-	rdf_is_bnode(Bnode),
-	rdf(Bnode, oa:hasSource, Source),
-	rdf(Bnode, oa:hasSelector, SelectorBnode),
+normalize_object(TargetNode, hasTarget, TargetDict) :-
+	rdfs_individual_of(TargetNode, oa:'SpecificResource'),
+	rdf(TargetNode, oa:hasSource, Source),
+	rdf(TargetNode, oa:hasSelector, SelectorBnode),
 	rdf(SelectorBnode, rdf:value, literal(Value)),
 	rdf(SelectorBnode, oa:x, literal(type(_,X))),
 	rdf(SelectorBnode, oa:y, literal(type(_,Y))),
 	rdf(SelectorBnode, oa:w, literal(type(_,W))),
 	rdf(SelectorBnode, oa:h, literal(type(_,H))),
 	SelectorDict = selector{value:Value,x:X,y:Y,w:W,h:H},
-	TargetDict = target{hasSource:Source,hasSelector:SelectorDict},
+	TargetDict = target{hasSource:Source,
+			    hasSelector:SelectorDict,
+			    '@id':TargetNode
+			   },
 	!.
 normalize_object(Object, type, NormalizedObject) :-
 	rdf_global_id(_NS:NormalizedObject, Object),
@@ -125,7 +129,10 @@ rdf_add_annotation(Options, Annotation) :-
 		   [100*Shape.x,     100*Shape.y,
 		    100*Shape.width, 100*Shape.height]),
 	    atom_string(TargetUri, TargetDict.hasSource),
-	    rdf_bnode(TargetNode),
+	    variant_sha1((TargetUri, Fragment), TargetHash), % FIXME
+	    debug(target, '~p, ~w, ~w: ~w',
+		  [TargetUri, Shape.x, Shape.y, TargetHash]),
+	    gv_hash_uri(TargetHash, TargetNode),
 	    rdf_bnode(SelectorNode),
 	    rdf_assert(SelectorNode, rdf:type, oa:'FragmentSelector', Graph),
 	    rdf_assert(SelectorNode, rdf:value, literal(Fragment), Graph),
