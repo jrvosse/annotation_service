@@ -180,10 +180,10 @@ rdf_get_annotation(Annotation, Props) :-
 %
 %	Get Target uri, abstracting away OA selector stuff
 rdf_get_annotation_target(Annotation, TargetUri) :-
-	rdf(Annotation, oa:hasTarget, T),
-	(   rdf_is_bnode(T)
-	->  rdf(T, oa:hasSource, TargetUri)
-	;   T = TargetUri
+	rdf(Annotation, oa:hasTarget, TargetNode),
+	(   rdfs_individual_of(TargetNode, oa:'SpecificResource')
+	->  rdf(TargetNode, oa:hasSource, TargetUri)
+	;   TargetNode = TargetUri
 	).
 
 rdf_get_annotation_by_tfa(Target, Field, Annotator, Graph, [annotation(Annotation)|Props]) :-
