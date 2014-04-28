@@ -16,6 +16,9 @@ literal body tags.
 @author Jacco van Ossenbruggen
 @license LGPL
 */
+
+:- rdf_register_ns(oa_local_target, 'http://localhost/.well-known/genid/oa/target/selector_').
+
 :- use_module(library(semweb/rdf_db)).
 :- use_module(library(semweb/rdfs)).
 :- use_module(library(semweb/rdf_label)).
@@ -132,7 +135,7 @@ rdf_add_annotation(Options, Annotation) :-
 	    variant_sha1((TargetUri, Fragment), TargetHash), % FIXME
 	    debug(target, '~p, ~w, ~w: ~w',
 		  [TargetUri, Shape.x, Shape.y, TargetHash]),
-	    gv_hash_uri(TargetHash, TargetNode),
+	    rdf_global_id(oa_local_target:TargetHash, TargetNode),
 	    rdf_bnode(SelectorNode),
 	    rdf_assert(SelectorNode, rdf:type, oa:'FragmentSelector', Graph),
 	    rdf_assert(SelectorNode, rdf:value, literal(Fragment), Graph),
