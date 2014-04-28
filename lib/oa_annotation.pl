@@ -229,20 +229,22 @@ rdf_remove_annotation(Annotation, Target) :-
 		rdf(Annotation, oa:hasTarget, TargetBnode, Target)
 	    )
 	    )
-	->  rdf_remove_annotation_brefs(Annotation, Target),
+	->  rdf_remove_annotation_deps(Annotation, Target),
 	    rdf_retractall(Annotation, _, _, Target)
 	;   true
 	).
 
 
-rdf_remove_annotation_brefs(Annotation, Graph) :-
+rdf_remove_annotation_deps(Annotation, Graph) :-
 	findall(rdf(Annotation,P,O,Graph),
 		(   rdf(Annotation, P, O, Graph),
-		    rdf_is_bnode(O)
+		    (	rdf_is_bnode(O)
+		    ;	rdfs_individual_of(O, oa:'SpecificResource')
+		    )
 		),
-		BnodeTriples),
-	forall(member(rdf(S,P,O,G), BnodeTriples),
-	       (   rdf_remove_annotation_brefs(O,G),
+		DepTriples),
+	forall(member(rdf(S,P,O,G), DepTriples),
+	       (   rdf_remove_annotation_deps(O,G),
 		   rdf_retractall(S,P,O,G)
 	       )).
 
