@@ -225,8 +225,8 @@ get_annotation_properties(Annotation, Graph, Props) :-
 rdf_remove_annotation(Annotation, Target) :-
 	(   (rdf(Annotation, oa:hasTarget, Target, Target)
 	    ;
-	    (	rdf(TargetBnode, oa:hasSource, Target, Target),
-		rdf(Annotation, oa:hasTarget, TargetBnode, Target)
+	    (	rdf(Annotation, oa:hasTarget, TargetBnode, Target),
+		rdf(TargetBnode, oa:hasSource, Target, Target)
 	    )
 	    )
 	->  rdf_remove_annotation_deps(Annotation, Target),
