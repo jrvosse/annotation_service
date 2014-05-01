@@ -6,8 +6,6 @@
 :- use_module(library(http/http_parameters)).
 :- use_module(library(http/http_json)).
 :- use_module(library(http/json)).
-:- use_module(library(http/json_convert)).
-:- use_module(library(http/json)).
 
 % SemWeb:
 :- use_module(library(semweb/rdf_db)).
@@ -55,10 +53,10 @@ http_add_annotation(Request) :-
 			[uri,
 			 description('URI of the annotation field')
 			]),
-		  hasBody(Body0,
-		       [json_rdf_object,
+		  hasBody(BodyObject,
+		       [optional(false),
 			description('Body of the annotation')]),
-		  label(Label0,
+		  label(Label,
 			[optional(true),
 			 description('Label of the annotation value')]),
 		  typing_time(TypingTime,
@@ -80,13 +78,12 @@ http_add_annotation(Request) :-
 	),
 
 
-	annotation_body(Body0, Body),
-	annotation_label(Label0, Body, Label),
-	format(atom(CommitComment), 'add annotation: ~w on ~w~n~n', [Body, TargetURI]),
+	annotation_body(BodyObject, BodyDict, Label),
+	format(atom(CommitComment), 'add annotation: ~w on ~w~n~n', [Label, TargetURI]),
 	with_mutex(TargetURI,
 		   (   rdf_add_annotation(
 			   [target(TargetDict),
-			    body(Body),
+			    body(BodyDict),
 			    field(FieldURI),
 			    user(User),
 			    label(Label),
@@ -178,23 +175,24 @@ enrich_annotation(A, Json) :-
 	tag_link(A,Link),
 	rdf_get_annotation(A, AnOptions),
 	screen_name(AnOptions, ScreenName),
-	select_option(hasBody(Body), AnOptions, AnOptions1),
-	prolog_to_json(Body, JsonBody),
-
-	Json = json([annotation(A),
-		     hasBody(JsonBody),
+	Json = json([
+		     '@context'('http://www.w3.org/ns/oa-context-20130208.json'),
+		     annotation(A),
 		     screenName(ScreenName),
 		     display_link(Link) |
-		     AnOptions1]).
+		     AnOptions]).
 
+annotation_body(JSON, Dict, Label) :-
+	atom_json_dict(JSON, Dict, []),
+	(   Dict.get('@id') = URI
+	->  annotation_label(URI, Label)
+	;   atom_string(Label,Dict.literal)
+	).
 
-annotation_body(literal(L), literal(L)) :- !.
-annotation_body(uri(URI), URI).
-
-annotation_label(Label0, Body, Label) :-
-	(   var(Label0)
+annotation_label(Body, Label) :-
+	(   var(Label)
 	->  rdf_display_label(Body, Label)
-	;   Label = Label0
+	;   true
 	).
 
 
@@ -219,21 +217,3 @@ screen_name(Annotation, ScreenName) :-
 	rdf_equal(user:anonymous, Anonymous),
 	option(annotator(Annotator), Annotation, Anonymous),
 	iri_xml_namespace(Annotator, _, ScreenName).
-
-http:convert_parameter(json_rdf_object, Atom, Term) :-
-        atom_json_term(Atom, JSON, []),
-        json_to_prolog(JSON, Term).
-
-
-:- json_object
-        annotation(
-            annotation:atom,
-            hasBody:_,
-            label:atom,
-            display_link:atom,
-            type:atom,
-            user:uri),
-        uri(value:uri) + [type=uri],
-        literal(lang:atom, value:_) + [type=literal],
-        literal(type:atom, value:_) + [type=literal],
-        literal(value:_) + [type=literal].

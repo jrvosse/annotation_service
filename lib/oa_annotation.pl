@@ -35,11 +35,12 @@ normalize_property(Property, NormalizedProperty) :-
 	rdf_global_id(_NS:NormalizedProperty, Property),!.
 
 
-normalize_object(Object, hasBody, Object) :-
-	rdf_is_literal(Object),
+normalize_object(literal(Object), hasBody, ObjectDict) :-
+	ObjectDict = body{literal:Object},
 	!.
-normalize_object(Object, hasBody, uri(Object)) :-
+normalize_object(Object, hasBody, ObjectDict) :-
 	rdf_is_resource(Object),
+	ObjectDict = body{'@id':Object},
 	!.
 normalize_object(TargetNode, hasTarget, TargetDict) :-
 	rdfs_individual_of(TargetNode, oa:'SpecificResource'),
@@ -101,11 +102,13 @@ normalize_object(Object, _NormalizedProperty, NormalizedObject) :-
 %	Annotation).
 
 rdf_add_annotation(Options, Annotation) :-
-	option(body(Body),      Options),
 	option(user(User),      Options, user:anonymous),
 	option(field(Field),    Options, dcterms:subject),
 	option(typing_time(TT),	Options, 0),
 	option(graph(Graph),    Options, 'annotations'),
+	option(label(Label),    Options, 'undefined label'),
+
+	option(body(BodyDict),	 Options),
 	option(target(TargetDict),  Options),
 
 	(   option(type(Type), Options)
@@ -116,15 +119,15 @@ rdf_add_annotation(Options, Annotation) :-
 	;   QType = oax:'Tag'
 	),
 
-	(   rdf_is_literal(Body)
-	->  literal_text(Body, DefaultLabel)
-	;   rdf_label(Body, DefaultLabel)
-	),
-	option(label(Label),    Options, DefaultLabel),
-
 	get_time(Time),
 	format_time(atom(DefaultTimeStamp), '%FT%T%:z', Time), % xsd:dateTime
 	option(timestamp(TimeStamp), Options, DefaultTimeStamp),
+
+	(   BodyDict.get('@id') = UriString
+	->  atom_string(Body, UriString)
+	;   atom_string(Literal, BodyDict.literal),
+	    Body=literal(Literal) % FIXME make OA compliant
+	),
 
 	(   SelectorDict = TargetDict.get(hasSelector)
 	->  Shape = SelectorDict.value,
