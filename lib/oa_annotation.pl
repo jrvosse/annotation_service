@@ -17,7 +17,8 @@ literal body tags.
 @license LGPL
 */
 
-:- rdf_register_ns(oa_local_target, 'http://localhost/.well-known/genid/oa/target/selector_').
+:- rdf_register_ns(oa_target,   'http://localhost/.well-known/genid/oa/target/target_').
+:- rdf_register_ns(oa_selector, 'http://localhost/.well-known/genid/oa/target/selector_').
 
 :- use_module(library(semweb/rdf_db)).
 :- use_module(library(semweb/rdfs)).
@@ -45,12 +46,12 @@ normalize_object(Object, hasBody, ObjectDict) :-
 normalize_object(TargetNode, hasTarget, TargetDict) :-
 	rdfs_individual_of(TargetNode, oa:'SpecificResource'),
 	rdf(TargetNode, oa:hasSource, Source),
-	rdf(TargetNode, oa:hasSelector, SelectorBnode),
-	rdf(SelectorBnode, rdf:value, literal(Value)),
-	rdf(SelectorBnode, oa:x, literal(type(_,X))),
-	rdf(SelectorBnode, oa:y, literal(type(_,Y))),
-	rdf(SelectorBnode, oa:w, literal(type(_,W))),
-	rdf(SelectorBnode, oa:h, literal(type(_,H))),
+	rdf(TargetNode, oa:hasSelector, SelectorNode),
+	rdf(SelectorNode, rdf:value, literal(Value)),
+	rdf(SelectorNode, oa:x, literal(type(_,X))),
+	rdf(SelectorNode, oa:y, literal(type(_,Y))),
+	rdf(SelectorNode, oa:w, literal(type(_,W))),
+	rdf(SelectorNode, oa:h, literal(type(_,H))),
 	SelectorDict = selector{value:Value,x:X,y:Y,w:W,h:H},
 	TargetDict = target{hasSource:Source,
 			    hasSelector:SelectorDict,
@@ -129,27 +130,8 @@ rdf_add_annotation(Options, Annotation) :-
 	    Body=literal(Literal) % FIXME make OA compliant
 	),
 
-	(   SelectorDict = TargetDict.get(hasSelector)
-	->  Shape = SelectorDict.value,
-	    format(atom(Fragment), '#xywh=percent:~0f,~0f,~0f,~0f',
-		   [100*Shape.x,     100*Shape.y,
-		    100*Shape.width, 100*Shape.height]),
-	    atom_string(TargetUri, TargetDict.hasSource),
-	    variant_sha1((TargetUri, Fragment), TargetHash), % FIXME
-	    debug(target, '~p, ~w, ~w: ~w',
-		  [TargetUri, Shape.x, Shape.y, TargetHash]),
-	    rdf_global_id(oa_local_target:TargetHash, TargetNode),
-	    rdf_bnode(SelectorNode),
-	    rdf_assert(SelectorNode, rdf:type, oa:'FragmentSelector', Graph),
-	    rdf_assert(SelectorNode, rdf:value, literal(Fragment), Graph),
-	    rdf_assert(SelectorNode, dcterms:conformsTo, 'http://www.w3.org/TR/media-frags/', Graph),
-	    rdf_assert(SelectorNode, oa:x, literal(type(xsd:float, Shape.x)), Graph),
-	    rdf_assert(SelectorNode, oa:y, literal(type(xsd:float, Shape.y)), Graph),
-	    rdf_assert(SelectorNode, oa:w, literal(type(xsd:float, Shape.width)), Graph),
-	    rdf_assert(SelectorNode, oa:h, literal(type(xsd:float, Shape.height)), Graph),
-	    rdf_assert(TargetNode, rdf:type,oa:'SpecificResource', Graph),
-	    rdf_assert(TargetNode, oa:hasSource, TargetUri, Graph),
-	    rdf_assert(TargetNode, oa:hasSelector, SelectorNode, Graph)
+	(   _S = TargetDict.get(hasSelector)
+	->  make_specific_target(TargetDict, Graph, TargetNode)
 	;   TargetNode = TargetDict.get('@id')
 	),
 	KeyValue0 = [
@@ -173,6 +155,35 @@ rdf_add_annotation(Options, Annotation) :-
 			rdf_assert(S,P,O, Graph)))).
 
 po2rdf(S,po(P,O),rdf(S,P,O)).
+
+make_specific_target(TargetDict, Graph, TargetNode) :-
+	SelectorDict = TargetDict.get(hasSelector),
+	Shape = SelectorDict.value,
+	format(atom(Fragment), '#xywh=percent:~0f,~0f,~0f,~0f',
+	       [100*Shape.x,     100*Shape.y,
+		100*Shape.width, 100*Shape.height]),
+	atom_string(TargetUri, TargetDict.hasSource),
+	variant_sha1((TargetUri, Fragment), TargetHash), % FIXME
+	debug(target, '~p, ~w, ~w: ~w',
+	      [TargetUri, Shape.x, Shape.y, TargetHash]),
+	rdf_global_id(oa_target:TargetHash, TargetNode),
+	(   rdf_subject(TargetNode)
+	->  true % TargetNode already exists
+	;   rdf_global_id(oa_selector:TargetHash, SelectorNode),
+	    make_selector_node(Fragment, Shape, Graph, SelectorNode),
+	    rdf_assert(TargetNode, rdf:type,oa:'SpecificResource', Graph),
+	    rdf_assert(TargetNode, oa:hasSource, TargetUri, Graph),
+	    rdf_assert(TargetNode, oa:hasSelector, SelectorNode, Graph)
+	).
+
+make_selector_node(Fragment, Shape, Graph, Node) :-
+	rdf_assert(Node, rdf:type, oa:'FragmentSelector', Graph),
+	rdf_assert(Node, rdf:value, literal(Fragment), Graph),
+	rdf_assert(Node, dcterms:conformsTo, 'http://www.w3.org/TR/media-frags/', Graph),
+	rdf_assert(Node, oa:x, literal(type(xsd:float, Shape.x)), Graph),
+	rdf_assert(Node, oa:y, literal(type(xsd:float, Shape.y)), Graph),
+	rdf_assert(Node, oa:w, literal(type(xsd:float, Shape.width)), Graph),
+	rdf_assert(Node, oa:h, literal(type(xsd:float, Shape.height)), Graph).
 
 %%	rdf_get_annotation(+Annotation:url, -Props:list) is det.
 %
@@ -199,8 +210,8 @@ rdf_get_annotation_by_tfa(Target, Field, Annotator, Graph, [annotation(Annotatio
 	get_annotation_properties(Annotation, Graph, Props).
 
 rdf_get_annotation_by_tfa(Target, Field, Annotator, Graph, [annotation(Annotation)|Props]) :-
-	rdf(TargetBnode, oa:hasSource, Target, Graph),
-	rdf(Annotation, oa:hasTarget, TargetBnode, Graph),
+	rdf(TargetNode, oa:hasSource, Target, Graph),
+	rdf(Annotation, oa:hasTarget, TargetNode, Graph),
 	rdf(Annotation, ann_ui:annotationField, Field, Graph),
 	rdf_has_graph(Annotation, oa:annotator, Annotator, Graph),
 	get_annotation_properties(Annotation, Graph, Props).
@@ -228,8 +239,8 @@ get_annotation_properties(Annotation, Graph, Props) :-
 rdf_remove_annotation(Annotation, Target) :-
 	(   (rdf(Annotation, oa:hasTarget, Target, Target)
 	    ;
-	    (	rdf(Annotation, oa:hasTarget, TargetBnode, Target),
-		rdf(TargetBnode, oa:hasSource, Target, Target)
+	    (	rdf(Annotation, oa:hasTarget, TargetNode, Target),
+		rdf(TargetNode, oa:hasSource, Target, Target)
 	    )
 	    )
 	->  rdf_remove_annotation_deps(Annotation, Target),
@@ -237,19 +248,26 @@ rdf_remove_annotation(Annotation, Target) :-
 	;   true
 	).
 
+rdf_remove_target_nodes([],_).
+rdf_remove_target_nodes([H|T], Graph) :-
+	rdf(H, oa:hasSelector, SelectorNode, Graph),
+	rdf_retractall(SelectorNode, _, _, Graph),
+	rdf_retractall(H,_,_Graph),
+	rdf_remove_target_nodes(T, Graph).
+
 
 rdf_remove_annotation_deps(Annotation, Graph) :-
-	findall(rdf(Annotation,P,O,Graph),
-		(   rdf(Annotation, P, O, Graph),
-		    (	rdf_is_bnode(O)
-		    ;	rdfs_individual_of(O, oa:'SpecificResource')
-		    )
-		),
-		DepTriples),
-	forall(member(rdf(S,P,O,G), DepTriples),
-	       (   rdf_remove_annotation_deps(O,G),
-		   rdf_retractall(S,P,O,G)
-	       )).
+	findall(TargetNode, loose_targets(Annotation, Graph, TargetNode), Targets),
+	rdf_remove_target_nodes(Targets, Graph).
+
+loose_targets(Annotation, Graph, TargetNode) :-
+	rdf(Annotation, oa:hasTarget, TargetNode,  Graph),
+	rdf(TargetNode, rdf:type, oa:'SpecificResource', Graph),
+	\+ ( rdf(OtherAnnotation, oa:hasTarget, TargetNode, Graph),
+	     OtherAnnotation \= Annotation
+	   ).
+
+
 
 
 %%	rdf_has_graph(Subject, SuperProperty, Object, Graph) is nondet.
