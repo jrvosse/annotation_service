@@ -63,18 +63,22 @@ http_add_annotation(Request) :-
 			      [default(0),
 			       description("Time it took to type in milliseconds")
 			      ]),
+		  motivatedBy(Motivation,
+			      [ uri,
+				default(oa:tagging),
+				description('motivation')
+			      ]),
 		  type(Type,
-			      [default(tag),
-			       atom,
-			       description("Annotation type")
-			      ])
+		       [ uri,
+			 optional(true),
+			 description("Annotation type")
+		       ])
 		]),
 	user_url(User),
-	(   atom_json_dict(TargetObject,TargetDict,[])
-	    -> atom_string(TargetURI,TargetDict.hasSource)
-	    ;  (TargetDict = target{'@id':TargetObject} ,
-	        TargetURI  = TargetObject
-	       )
+	atom_json_dict(TargetObject,TargetDictList,[]),
+	member(TargetDict, TargetDictList),
+	( atom_string(TargetURI, TargetDict.get('@id')) ;
+	  atom_string(TargetURI, TargetDict.hasSource)
 	),
 
 
@@ -82,13 +86,14 @@ http_add_annotation(Request) :-
 	format(atom(CommitComment), 'add annotation: ~w on ~w~n~n', [Label, TargetURI]),
 	with_mutex(TargetURI,
 		   (   rdf_add_annotation(
-			   [target(TargetDict),
+			   [target(TargetDictList),
 			    body(BodyDict),
 			    field(FieldURI),
 			    user(User),
 			    label(Label),
 			    graph(TargetURI),
 			    type(Type),
+			    motivatedBy(Motivation),
 			    typing_time(TypingTime)
 			   ],
 			   Annotation),
@@ -175,18 +180,19 @@ enrich_annotation(A, Json) :-
 	tag_link(A,Link),
 	rdf_get_annotation(A, AnOptions),
 	screen_name(AnOptions, ScreenName),
-	Json = json([
-		     '@context'('http://www.w3.org/ns/oa-context-20130208.json'),
-		     annotation(A),
-		     screenName(ScreenName),
-		     display_link(Link) |
-		     AnOptions]).
+	Json = json(
+		   ['@context'('http://www.w3.org/ns/oa.json'),
+		    '@id'(A),
+		    annotation(A),
+		    screenName(ScreenName),
+		    display_link(Link) |
+		    AnOptions]).
 
 annotation_body(JSON, Dict, Label) :-
 	atom_json_dict(JSON, Dict, []),
 	(   Dict.get('@id') = URI
 	->  annotation_label(URI, Label)
-	;   atom_string(Label,Dict.literal)
+	;   atom_string(Label,Dict.get('@value'))
 	).
 
 annotation_label(Body, Label) :-
@@ -215,5 +221,5 @@ tag_link(Annotation,Link) :-
 
 screen_name(Annotation, ScreenName) :-
 	rdf_equal(user:anonymous, Anonymous),
-	option(annotator(Annotator), Annotation, Anonymous),
+	option(annotatedBy(Annotator), Annotation, Anonymous),
 	iri_xml_namespace(Annotator, _, ScreenName).

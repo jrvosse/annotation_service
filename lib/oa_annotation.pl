@@ -32,17 +32,21 @@ literal body tags.
 	rdf_has_graph(r,r,r,r).
 
 
-normalize_property(Property, NormalizedProperty) :-
-	rdf_global_id(_NS:NormalizedProperty, Property),!.
+normalize_property(rdf:type, '@type') :-
+	!.
 
+normalize_property(Property, NormalizedProperty) :-
+	rdf_global_id(_NS:NormalizedProperty, Property),
+	!.
 
 normalize_object(literal(Object), hasBody, ObjectDict) :-
-	ObjectDict = body{literal:Object},
+	ObjectDict = body{'@value':Object},
 	!.
 normalize_object(Object, hasBody, ObjectDict) :-
 	rdf_is_resource(Object),
 	ObjectDict = body{'@id':Object},
 	!.
+
 normalize_object(TargetNode, hasTarget, TargetDict) :-
 	rdfs_individual_of(TargetNode, oa:'SpecificResource'),
 	rdf(TargetNode, oa:hasSource, Source),
@@ -58,10 +62,11 @@ normalize_object(TargetNode, hasTarget, TargetDict) :-
 			    '@id':TargetNode
 			   },
 	!.
-normalize_object(Object, type, NormalizedObject) :-
-	rdf_global_id(_NS:NormalizedObject, Object),
-	!,
-	NormalizedObject \= 'Annotation'.
+
+normalize_object(TargetNode, hasTarget, TargetDict) :-
+	TargetDict = target{'@id':TargetNode},
+	!.
+
 
 normalize_object(Object, _NormalizedProperty, NormalizedObject) :-
 	literal_text(Object, NormalizedObject),
@@ -84,7 +89,7 @@ normalize_object(Object, _NormalizedProperty, NormalizedObject) :-
 %	* field(Field)
 %	  defaults to dc:subject
 %	* type(Type)
-%	  defaults to oax:Tag
+%	  defaults to oa:Tag
 %	* typingTime
 %         default to 0 (zero)
 %	* timestamp(T)
@@ -108,43 +113,42 @@ rdf_add_annotation(Options, Annotation) :-
 	option(typing_time(TT),	Options, 0),
 	option(graph(Graph),    Options, 'annotations'),
 	option(label(Label),    Options, 'undefined label'),
-
+	option(motivatedBy(Mot), Options, oa:tagging),
 	option(body(BodyDict),	 Options),
-	option(target(TargetDict),  Options),
+	option(target(TargetDictList),  Options),
 
-	(   option(type(Type), Options)
+	(   ( option(type(Type), Options), ground(Type))
 	->  (  uri_is_global(Type)
 	    ->	QType = Type
 	    ;	QType = ann_ui:Type
 	    )
-	;   QType = oax:'Tag'
+	;   QType = oa:'Annotation'
 	),
 
 	get_time(Time),
 	format_time(atom(DefaultTimeStamp), '%FT%T%:z', Time), % xsd:dateTime
 	option(timestamp(TimeStamp), Options, DefaultTimeStamp),
+	make_target_pairs(TargetDictList, TargetPairs, Graph),
 
 	(   BodyDict.get('@id') = UriString
 	->  atom_string(Body, UriString)
-	;   atom_string(Literal, BodyDict.literal),
+	;   atom_string(Literal, BodyDict.get('@value')),
 	    Body=literal(Literal) % FIXME make OA compliant
 	),
 
-	(   _S = TargetDict.get(hasSelector)
-	->  make_specific_target(TargetDict, Graph, TargetNode)
-	;   TargetNode = TargetDict.get('@id')
-	),
 	KeyValue0 = [
-		     po(rdf:type, oa:'Annotation'),
-		     po(rdf:type, QType),
-		     po(oa:annotated, literal(type(xsd:dateTime, TimeStamp))),
-		     po(oa:annotator, User),
-		     po(oa:hasTarget, TargetNode),
-		     po(oa:hasBody, Body),
-		     po(dcterms:title, literal(Label)),
-		     po(ann_ui:annotationField, Field),
-		     po(ann_ui:typingTime, literal(type(xsd:integer, TT)))
-		    ],
+	    po(rdf:type, oa:'Annotation'),
+	    po(rdf:type, QType),
+	    po(oa:annotatedAt, literal(type(xsd:dateTime, TimeStamp))),
+	    po(oa:annotatedBy, User),
+	    po(oa:motivatedBy, Mot),
+	    po(oa:hasBody, Body),
+	    po(dcterms:title, literal(Label)),
+	    po(ann_ui:annotationField, Field),
+	    po(ann_ui:typingTime, literal(type(xsd:integer, TT)))
+	    |
+	    TargetPairs
+	],
 	sort(KeyValue0, KeyValue),
 	rdf_global_term(KeyValue, Pairs),
 	variant_sha1(Pairs, Hash),
@@ -155,6 +159,15 @@ rdf_add_annotation(Options, Annotation) :-
 			rdf_assert(S,P,O, Graph)))).
 
 po2rdf(S,po(P,O),rdf(S,P,O)).
+
+make_target_pairs([], [], _) :- !.
+make_target_pairs([Dict|Tail], [po(oa:hasTarget, TargetNode)|PairTail], Graph) :-
+	(   _S = Dict.get(hasSelector)
+	->  make_specific_target(Dict, Graph, TargetNode)
+	;   atom_string(TargetNode,Dict.get('@id'))
+	),
+	make_target_pairs(Tail, PairTail, Graph).
+
 
 make_specific_target(TargetDict, Graph, TargetNode) :-
 	SelectorDict = TargetDict.get(hasSelector),
@@ -206,29 +219,46 @@ rdf_get_annotation_target(Annotation, TargetUri) :-
 rdf_get_annotation_by_tfa(Target, Field, Annotator, Graph, [annotation(Annotation)|Props]) :-
 	rdf(Annotation, oa:hasTarget, Target, Graph),
 	rdf(Annotation, ann_ui:annotationField, Field, Graph),
-	rdf_has_graph(Annotation, oa:annotator, Annotator, Graph),
+	rdf_has_graph(Annotation, oa:annotatedBy, Annotator, Graph),
 	get_annotation_properties(Annotation, Graph, Props).
 
 rdf_get_annotation_by_tfa(Target, Field, Annotator, Graph, [annotation(Annotation)|Props]) :-
 	rdf(TargetNode, oa:hasSource, Target, Graph),
 	rdf(Annotation, oa:hasTarget, TargetNode, Graph),
 	rdf(Annotation, ann_ui:annotationField, Field, Graph),
-	rdf_has_graph(Annotation, oa:annotator, Annotator, Graph),
+	rdf_has_graph(Annotation, oa:annotatedBy, Annotator, Graph),
 	get_annotation_properties(Annotation, Graph, Props).
 
 %%	rdf_get_annotation_properties(+An:uri,+Grph:uri,-Props:list) is nondet.
 %
 %	Props is an option list with the properties of Annotation
 %	in Graph.
+%
+%	Duplicate keys as in [ key1(a), key1(b) key2(c) ] are grouped
+%	into single keys with a value list: [ key1([a,b], key2(c) ].
 
 get_annotation_properties(Annotation, Graph, Props) :-
 	findall(P,
 		(   rdf(Annotation, Property, Object, Graph),
 		    normalize_property(Property, PName),
 		    normalize_object(Object, PName, NormalizedObject),
-		    P =.. [PName, NormalizedObject]
+		    P =.. [PName,NormalizedObject]
 		),
-		Props).
+		Props0),
+	sort(Props0, PropsSorted),
+	group_duplicate_keys(PropsSorted, Props).
+
+group_duplicate_keys([], []) :-!.
+group_duplicate_keys([Option], [Option]) :- !.
+group_duplicate_keys([O1, O2 | TailIn], [G|TailOut]) :-
+	O1 =.. [Key, Value1],
+	O2 =.. [Key, Value2],
+	!,
+	G  =.. [Key, [Value1, Value2]],
+	group_duplicate_keys(TailIn, TailOut).
+group_duplicate_keys([O | TailIn], [O|TailOut]) :-
+	group_duplicate_keys(TailIn, TailOut),!.
+
 
 
 %%	rdf_remove_annotation(+Annotation:url, ?Target:url) is det.
