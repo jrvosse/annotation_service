@@ -4,21 +4,14 @@
 @prefix     owl: <http://www.w3.org/2002/07/owl#> .
 @prefix	dcterms: <http://purl.org/dc/terms/> .
 
-[ vann:preferredNamespacePrefix	"oac" ;
-  vann:preferredNamespaceUri "http://www.openannotation.org/ns/" ;
-] .
 
 [ vann:preferredNamespacePrefix	"oa" ;
-  vann:preferredNamespaceUri "http://www.w3.org/ns/openannotation/core/";
+  vann:preferredNamespaceUri "http://www.w3.org/ns/oa#";
 ] .
 
-[ vann:preferredNamespacePrefix "ann_ui" ;
-  vann:preferredNamespaceUri "http://semanticweb.cs.vu.nl/annotate/ui/"
-] .
-
-<oa_compat>
+<oa>
 	a void:Dataset ;
-	dcterms:title "Backward compatibility triples for oa namespace updates";
-	owl:versionInfo "0.01" ;
+	dcterms:title "Open Annotation Data Model"@en;
+	owl:versionInfo "0.9.20130208" ;
 	void:dataDump
-		<oa_compat.ttl> .
+		<oa.ttl> .

@@ -11,13 +11,16 @@ Prolog.
 % Namespace for package-specific extensions:
 :- rdf_register_ns(ann_ui,  'http://semanticweb.cs.vu.nl/annotate/ui/').
 
-% Namespace for old open annotation model:
+% Namespace for the really old open annotation model:
 :- rdf_register_ns(oac, 'http://www.openannotation.org/ns/').
 
-% Namespaces for new open annotation model. Warning: under development!
-:- rdf_register_ns(oa,  'http://www.w3.org/ns/openannotation/core/').
-:- rdf_register_ns(oax,	'http://www.w3.org/ns/openannotation/extension/').
+% Namespaces for old open annotation model
+:- rdf_register_ns(oa_old,  'http://www.w3.org/ns/openannotation/core/').
+:- rdf_register_ns(oax,	    'http://www.w3.org/ns/openannotation/extension/').
+
+% Namespaces for current open annotation model
+:- rdf_register_ns(oa,  'http://www.w3.org/ns/oa#').
 
 :- rdf_attach_library(annotation_service(rdf)).
-:- rdf_load_library(oa_compat).
+:- rdf_load_library(oa).
 
