@@ -31,11 +31,16 @@ literal body tags.
 :- rdf_register_ns(oa_target,   'http://localhost/.well-known/genid/oa/target/target_').
 :- rdf_register_ns(oa_selector, 'http://localhost/.well-known/genid/oa/target/selector_').
 
+upgrade_property_name(annotated, annotatedAt).
+upgrade_property_name(annotator, annotatedBy).
+upgrade_property_name(P,P).
+
 normalize_property(rdf:type, '@type') :-
 	!.
 
 normalize_property(Property, NormalizedProperty) :-
-	rdf_global_id(_NS:NormalizedProperty, Property),
+	rdf_global_id(_NS:Local, Property),
+	upgrade_property_name(Local,NormalizedProperty),
 	!.
 
 normalize_object(literal(Object), hasBody, ObjectDict) :-
@@ -48,13 +53,17 @@ normalize_object(Object, hasBody, ObjectDict) :-
 
 normalize_object(TargetNode, hasTarget, TargetDict) :-
 	rdfs_individual_of(TargetNode, oa:'SpecificResource'),
-	rdf(TargetNode, oa:hasSource, Source),
-	rdf(TargetNode, oa:hasSelector, SelectorNode),
-	rdf(SelectorNode, rdf:value, literal(Value)),
-	rdf(SelectorNode, oa:x, literal(type(_,X))),
-	rdf(SelectorNode, oa:y, literal(type(_,Y))),
-	rdf(SelectorNode, oa:w, literal(type(_,W))),
-	rdf(SelectorNode, oa:h, literal(type(_,H))),
+	rdf_has(TargetNode, oa:hasSource, Source),
+	rdf_has(TargetNode, oa:hasSelector, SelectorNode),
+	rdf_has(SelectorNode, rdf:value, literal(Value)),
+	(   rdf_has(SelectorNode, oa:x, literal(type(_,X))),
+	    rdf_has(SelectorNode, oa:y, literal(type(_,Y))),
+	    rdf_has(SelectorNode, oa:w, literal(type(_,W))),
+	    rdf_has(SelectorNode, oa:h, literal(type(_,H)))
+	->  true
+	;   atomic_list_concat([_,V], ':', Value),
+	    atomic_list_concat([X,Y,W,H], ',', V)
+	),
 	SelectorDict = selector{value:Value,x:X,y:Y,w:W,h:H},
 	TargetDict = target{hasSource:Source,
 			    hasSelector:SelectorDict,
@@ -216,15 +225,15 @@ rdf_get_annotation_target(Annotation, TargetUri) :-
 	).
 
 rdf_get_annotation_by_tfa(Target, Field, Annotator, Graph, [annotation(Annotation)|Props]) :-
-	rdf(Annotation, oa:hasTarget, Target, Graph),
-	rdf(Annotation, ann_ui:annotationField, Field, Graph),
+	rdf_has_graph(Annotation, oa:hasTarget, Target, Graph),
+	rdf_has_graph(Annotation, ann_ui:annotationField, Field, Graph),
 	rdf_has_graph(Annotation, oa:annotatedBy, Annotator, Graph),
 	get_annotation_properties(Annotation, Graph, Props).
 
 rdf_get_annotation_by_tfa(Target, Field, Annotator, Graph, [annotation(Annotation)|Props]) :-
-	rdf(TargetNode, oa:hasSource, Target, Graph),
-	rdf(Annotation, oa:hasTarget, TargetNode, Graph),
-	rdf(Annotation, ann_ui:annotationField, Field, Graph),
+	rdf_has_graph(TargetNode, oa:hasSource, Target, Graph),
+	rdf_has_graph(Annotation, oa:hasTarget, TargetNode, Graph),
+	rdf_has_graph(Annotation, ann_ui:annotationField, Field, Graph),
 	rdf_has_graph(Annotation, oa:annotatedBy, Annotator, Graph),
 	get_annotation_properties(Annotation, Graph, Props).
 
