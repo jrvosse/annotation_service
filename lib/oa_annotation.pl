@@ -62,7 +62,10 @@ normalize_object(TargetNode, hasTarget, TargetDict) :-
 	    rdf_has(SelectorNode, oa:h, literal(type(_,H)))
 	->  true
 	;   atomic_list_concat([_,V], ':', Value),
-	    atomic_list_concat([X,Y,W,H], ',', V)
+	    atomic_list_concat([XA,YA,WA,HA], ',', V),
+	    atom_number(XA, XN), atom_number(YA, YN),
+	    atom_number(WA,WN), atom_number(HA,HN),
+	    X is XN/100, Y is YN/100, W is WN/100, H is HN/100
 	),
 	SelectorDict = selector{value:Value,x:X,y:Y,w:W,h:H},
 	TargetDict = target{hasSource:Source,
