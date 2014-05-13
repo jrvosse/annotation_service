@@ -20,6 +20,7 @@ Prolog.
 
 % Namespaces for current open annotation model
 :- rdf_register_ns(oa,  'http://www.w3.org/ns/oa#').
+:- rdf_register_ns(cnt, 'http://www.w3.org/2011/content#').
 
 :- rdf_attach_library(annotation_service(rdf)).
 :- rdf_load_library(oa).

@@ -46,6 +46,14 @@ normalize_property(Property, NormalizedProperty) :-
 normalize_object(literal(Object), hasBody, ObjectDict) :-
 	ObjectDict = body{'@value':Object},
 	!.
+
+normalize_object(Object, hasBody, ObjectDict) :-
+	rdf_is_resource(Object),
+	rdfs_individual_of(Object, cnt:'ContentAsText'),
+	rdf_has(Object, cnt:chars, literal(Lit)),
+	ObjectDict = body{'@value':Lit},
+	!.
+
 normalize_object(Object, hasBody, ObjectDict) :-
 	rdf_is_resource(Object),
 	ObjectDict = body{'@id':Object},
@@ -140,26 +148,20 @@ rdf_add_annotation(Options, Annotation) :-
 	format_time(atom(DefaultTimeStamp), '%FT%T%:z', Time), % xsd:dateTime
 	option(timestamp(TimeStamp), Options, DefaultTimeStamp),
 	make_target_pairs(TargetDictList, TargetPairs, Graph),
+	make_body_pairs(BodyDict, BodyPairs, Graph),
 
-	(   BodyDict.get('@id') = UriString
-	->  atom_string(Body, UriString)
-	;   atom_string(Literal, BodyDict.get('@value')),
-	    Body=literal(Literal) % FIXME make OA compliant
-	),
-
-	KeyValue0 = [
+	KeyValuePairs = [
 	    po(rdf:type, oa:'Annotation'),
 	    po(rdf:type, QType),
 	    po(oa:annotatedAt, literal(type(xsd:dateTime, TimeStamp))),
 	    po(oa:annotatedBy, User),
 	    po(oa:motivatedBy, Mot),
-	    po(oa:hasBody, Body),
 	    po(dcterms:title, literal(Label)),
 	    po(ann_ui:annotationField, Field),
 	    po(ann_ui:typingTime, literal(type(xsd:integer, TT)))
-	    |
-	    TargetPairs
 	],
+	append([KeyValuePairs, TargetPairs, BodyPairs], KeyValue0),
+
 	sort(KeyValue0, KeyValue),
 	rdf_global_term(KeyValue, Pairs),
 	variant_sha1(Pairs, Hash),
@@ -178,6 +180,17 @@ make_target_pairs([Dict|Tail], [po(oa:hasTarget, TargetNode)|PairTail], Graph) :
 	;   atom_string(TargetNode,Dict.get('@id'))
 	),
 	make_target_pairs(Tail, PairTail, Graph).
+
+make_body_pairs(BodyDict, Pairs, Graph) :-
+	(   BodyDict.get('@id') = UriString
+	->  atom_string(Body, UriString)
+	;   atom_string(Literal, BodyDict.get('@value')),
+	    rdf_bnode(Body),
+	    rdf_assert(Body, rdf:type, cnt:'ContentAsText', Graph),
+	    rdf_assert(Body, cnt:chars, literal(Literal), Graph),
+	    rdf_assert(Body, dc:format, literal('text/plain'), Graph)
+	),
+	Pairs = [po(oa:hasBody, Body)].
 
 
 make_specific_target(TargetDict, Graph, TargetNode) :-
