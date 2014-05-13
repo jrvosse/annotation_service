@@ -17,9 +17,6 @@ literal body tags.
 @license LGPL
 */
 
-:- rdf_register_ns(oa_target,   'http://localhost/.well-known/genid/oa/target/target_').
-:- rdf_register_ns(oa_selector, 'http://localhost/.well-known/genid/oa/target/selector_').
-
 :- use_module(library(semweb/rdf_db)).
 :- use_module(library(semweb/rdfs)).
 :- use_module(library(semweb/rdf_label)).
@@ -31,6 +28,8 @@ literal body tags.
 	normalize_object(r,o,o),
 	rdf_has_graph(r,r,r,r).
 
+:- rdf_register_ns(oa_target,   'http://localhost/.well-known/genid/oa/target/target_').
+:- rdf_register_ns(oa_selector, 'http://localhost/.well-known/genid/oa/target/selector_').
 
 normalize_property(rdf:type, '@type') :-
 	!.
