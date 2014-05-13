@@ -124,7 +124,7 @@ http_remove_annotation(Request) :-
 		]),
 	user_url(User),
 
-	rdf(Annotation, oa:hasBody, Body),
+	rdf_has(Annotation, oa:hasBody, Body),
 	rdf_get_annotation_target(Annotation, TargetURI),
 	!,
 	format(atom(CommitComment), 'rm annotation: ~w on ~w~n~n~w', [Body, TargetURI, UserComment]),

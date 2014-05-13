@@ -278,33 +278,33 @@ group_duplicate_keys([O | TailIn], [O|TailOut]) :-
 %	does not exists.
 
 rdf_remove_annotation(Annotation, Target) :-
-	(   (rdf(Annotation, oa:hasTarget, Target, Target)
+	(   (rdf_has(Annotation, oa:hasTarget, Target)
 	    ;
-	    (	rdf(Annotation, oa:hasTarget, TargetNode, Target),
-		rdf(TargetNode, oa:hasSource, Target, Target)
+	    (	rdf_has(Annotation, oa:hasTarget, TargetNode),
+		rdf_has(TargetNode, oa:hasSource, Target)
 	    )
 	    )
 	->  rdf_remove_annotation_deps(Annotation, Target),
-	    rdf_retractall(Annotation, _, _, Target)
+	    rdf_retractall(Annotation, _, _)
 	;   true
 	).
 
 rdf_remove_target_nodes([],_).
 rdf_remove_target_nodes([H|T], Graph) :-
-	rdf(H, oa:hasSelector, SelectorNode, Graph),
-	rdf_retractall(SelectorNode, _, _, Graph),
-	rdf_retractall(H,_,_Graph),
+	rdf_has(H, oa:hasSelector, SelectorNode),
+	rdf_retractall(SelectorNode, _, _),
+	rdf_retractall(H,_,_),
 	rdf_remove_target_nodes(T, Graph).
 
 
 rdf_remove_annotation_deps(Annotation, Graph) :-
-	findall(TargetNode, loose_targets(Annotation, Graph, TargetNode), Targets),
+	findall(TargetNode, loose_targets(Annotation, TargetNode), Targets),
 	rdf_remove_target_nodes(Targets, Graph).
 
-loose_targets(Annotation, Graph, TargetNode) :-
-	rdf(Annotation, oa:hasTarget, TargetNode,  Graph),
-	rdf(TargetNode, rdf:type, oa:'SpecificResource', Graph),
-	\+ ( rdf(OtherAnnotation, oa:hasTarget, TargetNode, Graph),
+loose_targets(Annotation, TargetNode) :-
+	rdf_has(Annotation, oa:hasTarget, TargetNode),
+	rdfs_individual_of(TargetNode, oa:'SpecificResource'),
+	\+ ( rdf_has(OtherAnnotation, oa:hasTarget, TargetNode),
 	     OtherAnnotation \= Annotation
 	   ).
 
