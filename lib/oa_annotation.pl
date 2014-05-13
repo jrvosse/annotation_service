@@ -56,10 +56,10 @@ normalize_object(TargetNode, hasTarget, TargetDict) :-
 	rdf_has(TargetNode, oa:hasSource, Source),
 	rdf_has(TargetNode, oa:hasSelector, SelectorNode),
 	rdf_has(SelectorNode, rdf:value, literal(Value)),
-	(   rdf_has(SelectorNode, oa:x, literal(type(_,X))),
-	    rdf_has(SelectorNode, oa:y, literal(type(_,Y))),
-	    rdf_has(SelectorNode, oa:w, literal(type(_,W))),
-	    rdf_has(SelectorNode, oa:h, literal(type(_,H)))
+	(   rdf_has(SelectorNode, ann_ui:x, literal(type(_,X))),
+	    rdf_has(SelectorNode, ann_ui:y, literal(type(_,Y))),
+	    rdf_has(SelectorNode, ann_ui:w, literal(type(_,W))),
+	    rdf_has(SelectorNode, ann_ui:h, literal(type(_,H)))
 	->  true
 	;   atomic_list_concat([_,V], ':', Value),
 	    atomic_list_concat([XA,YA,WA,HA], ',', V),
@@ -204,10 +204,10 @@ make_selector_node(Fragment, Shape, Graph, Node) :-
 	rdf_assert(Node, rdf:type, oa:'FragmentSelector', Graph),
 	rdf_assert(Node, rdf:value, literal(Fragment), Graph),
 	rdf_assert(Node, dcterms:conformsTo, 'http://www.w3.org/TR/media-frags/', Graph),
-	rdf_assert(Node, oa:x, literal(type(xsd:float, Shape.x)), Graph),
-	rdf_assert(Node, oa:y, literal(type(xsd:float, Shape.y)), Graph),
-	rdf_assert(Node, oa:w, literal(type(xsd:float, Shape.width)), Graph),
-	rdf_assert(Node, oa:h, literal(type(xsd:float, Shape.height)), Graph).
+	rdf_assert(Node, ann_ui:x, literal(type(xsd:float, Shape.x)), Graph),
+	rdf_assert(Node, ann_ui:y, literal(type(xsd:float, Shape.y)), Graph),
+	rdf_assert(Node, ann_ui:w, literal(type(xsd:float, Shape.width)), Graph),
+	rdf_assert(Node, ann_ui:h, literal(type(xsd:float, Shape.height)), Graph).
 
 %%	rdf_get_annotation(+Annotation:url, -Props:list) is det.
 %

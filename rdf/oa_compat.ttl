@@ -1,3 +1,4 @@
+@prefix ann_ui: <http://semanticweb.cs.vu.nl/annotate/ui/> .
 @prefix old: <http://www.w3.org/ns/openannotation/core/> .
 @prefix oa: <http://www.w3.org/ns/oa#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -11,3 +12,8 @@ old:hasBody rdfs:subPropertyOf oa:hasBody .
 old:hasSelector rdfs:subPropertyOf oa:hasSelector .
 old:hasSource rdfs:subPropertyOf oa:hasSource .
 old:hasTarget rdfs:subPropertyOf oa:hasTarget .
+
+oa:x rdfs:subPropertyOf ann_ui:x .
+oa:y rdfs:subPropertyOf ann_ui:y .
+oa:w rdfs:subPropertyOf ann_ui:w .
+oa:h rdfs:subPropertyOf ann_ui:h .
