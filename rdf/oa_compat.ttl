@@ -1,0 +1,13 @@
+@prefix old: <http://www.w3.org/ns/openannotation/core/> .
+@prefix oa: <http://www.w3.org/ns/oa#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+old:SpecificResource rdfs:subClassOf oa:SpecificResource .
+old:FragmentSelector rdfs:subClassOf oa:FragmentSelector .
+
+old:annotated rdfs:subPropertyOf oa:annotatedAt .
+old:annotator rdfs:subPropertyOf oa:annotatedBy .
+old:hasBody rdfs:subPropertyOf oa:hasBody .
+old:hasSelector rdfs:subPropertyOf oa:hasSelector .
+old:hasSource rdfs:subPropertyOf oa:hasSource .
+old:hasTarget rdfs:subPropertyOf oa:hasTarget .

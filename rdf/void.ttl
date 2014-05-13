@@ -14,4 +14,5 @@
 	dcterms:title "Open Annotation Data Model"@en;
 	owl:versionInfo "0.9.20130208" ;
 	void:dataDump
+		<oa_compat.ttl> ,
 		<oa.ttl> .
