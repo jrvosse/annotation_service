@@ -165,13 +165,14 @@ collect_annotations([TargetURI|Tail], FieldURI, AllAnnotations) :-
 	append([TargetAnnotations, MetaAnnotations, TailAnnotations], AllAnnotations).
 
 collect_target_annotation(TargetURI, FieldURI, Annotations) :-
-	(   setting(user_restrict, true)
-	->  user_url(User)
+	(   setting(user_restrict, true),
+	    \+ logged_on(admin)
+	->  user_url(FilterUser)
 	;   true
 	),
 
 	findall(A,
-		(   rdf_get_annotation_by_tfa(TargetURI, FieldURI, User, _Graph, Options),
+		(   rdf_get_annotation_by_tfa(TargetURI, FieldURI, FilterUser, _Graph, Options),
 		    option(annotation(A), Options)
 		),
 		Annotations).
