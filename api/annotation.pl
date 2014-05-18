@@ -49,13 +49,17 @@ http_add_annotation(Request) :-
 		     [optional(false),
 		      description('URI (or complex target object) of the resource that is annotated')
 		     ]),
+		  hasBody(BodyObject,
+		       [optional(false),
+			description('Body of the annotation')]),
+		  graph(Graph,
+			[ optional(true),
+			  description('Named graph to store the triples of this annotation in.  Defaults to uri of the target')
+			  ]),
 		  field(FieldURI,
 			[uri,
 			 description('URI of the annotation field')
 			]),
-		  hasBody(BodyObject,
-		       [optional(false),
-			description('Body of the annotation')]),
 		  label(Label,
 			[optional(true),
 			 description('Label of the annotation value')]),
@@ -81,6 +85,10 @@ http_add_annotation(Request) :-
 	  atom_string(TargetURI, TargetDict.hasSource)
 	),
 
+	( var(Graph)
+	  -> Graph = TargetURI
+	  ; true
+	),
 
 	annotation_body(BodyObject, BodyDict, Label),
 	format(atom(CommitComment), 'add annotation: ~w on ~w~n~n', [Label, TargetURI]),
@@ -91,7 +99,7 @@ http_add_annotation(Request) :-
 			    field(FieldURI),
 			    user(User),
 			    label(Label),
-			    graph(TargetURI),
+			    graph(Graph),
 			    type(Type),
 			    motivatedBy(Motivation),
 			    typing_time(TypingTime)
@@ -129,7 +137,7 @@ http_remove_annotation(Request) :-
 	!,
 	format(atom(CommitComment), 'rm annotation: ~w on ~w~n~n~w', [Body, TargetURI, UserComment]),
 	with_mutex(TargetURI,
-		   (   rdf_remove_annotation(Annotation, TargetURI),
+		   (   rdf_remove_annotation(Annotation),
 		       commit_when_needed(TargetURI, User, CommitComment, Head))),
 	reply_json(json([annotation=Annotation,
 			 head=Head])).

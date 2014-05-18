@@ -3,7 +3,7 @@
 	      rdf_get_annotation/2,
 	      rdf_get_annotation_target/2,
 	      rdf_get_annotation_by_tfa/5,
-	      rdf_remove_annotation/2,
+	      rdf_remove_annotation/1,
 	      rdf_has_graph/4
 	  ]).
 /** <module> Open Annotation Prolog API
@@ -285,44 +285,36 @@ group_duplicate_keys([O | TailIn], [O|TailOut]) :-
 
 
 
-%%	rdf_remove_annotation(+Annotation:url, ?Target:url) is det.
+%%	rdf_remove_annotation(+Annotation:url) is det.
 %
-%	Removes Annotation on Target. Also succeeds if Annotation
-%	does not exists.
+%	Removes Annotation and all dependent objects if these are not
+%	used by other subjects . Also succeeds if Annotation does not
+%	exists.
 
-rdf_remove_annotation(Annotation, Target) :-
-	(   (rdf_has(Annotation, oa:hasTarget, Target)
-	    ;
-	    (	rdf_has(Annotation, oa:hasTarget, TargetNode),
-		rdf_has(TargetNode, oa:hasSource, Target)
-	    )
-	    )
-	->  rdf_remove_annotation_deps(Annotation, Target),
-	    rdf_retractall(Annotation, _, _)
+rdf_remove_annotation(Annotation) :-
+	(   rdfs_individual_of(Annotation, oa:'Annotation')
+	->  rdf_remove_subject(Annotation)
 	;   true
 	).
 
-rdf_remove_target_nodes([],_).
-rdf_remove_target_nodes([H|T], Graph) :-
-	rdf_has(H, oa:hasSelector, SelectorNode),
-	rdf_retractall(SelectorNode, _, _),
-	rdf_retractall(H,_,_),
-	rdf_remove_target_nodes(T, Graph).
+rdf_remove_subject(Node) :-
+	(   rdf_subject(Node)
+	->  rdf_remove_singleton_objects(Node),
+	    rdf_retractall(Node, _, _)
+	;   true
+	).
 
+rdf_remove_singleton_objects(Node) :-
+	findall(S, rdf_is_singleton_object(Node, S), Singles),
+	forall(member(S, Singles),
+	       (   rdf_remove_subject(S),
+		   rdf_retractall(Node, _, S)
+	       )
+	      ).
 
-rdf_remove_annotation_deps(Annotation, Graph) :-
-	findall(TargetNode, loose_targets(Annotation, TargetNode), Targets),
-	rdf_remove_target_nodes(Targets, Graph).
-
-loose_targets(Annotation, TargetNode) :-
-	rdf_has(Annotation, oa:hasTarget, TargetNode),
-	rdfs_individual_of(TargetNode, oa:'SpecificResource'),
-	\+ ( rdf_has(OtherAnnotation, oa:hasTarget, TargetNode),
-	     OtherAnnotation \= Annotation
-	   ).
-
-
-
+rdf_is_singleton_object(Subject, Object) :-
+	rdf(Subject, _, Object),
+	\+ ( rdf(Subject2, _, Object),Subject \= Subject2).
 
 %%	rdf_has_graph(Subject, SuperProperty, Object, Graph) is nondet.
 %
