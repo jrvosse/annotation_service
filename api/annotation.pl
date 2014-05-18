@@ -109,10 +109,13 @@ http_add_annotation(Request) :-
 			   Graph,
 			   User,
 			   CommitComment,
-			   _Head))),
+			   Head))),
 
-	enrich_annotation(Annotation, Json),
-	reply_json(Json).
+	enrich_annotation(Annotation, AnnotationJson),
+	reply_json(json([
+		       annotation=AnnotationJson,
+		       head=Head
+		   ])).
 
 %%	http_remove_annotation(+Request)
 %
