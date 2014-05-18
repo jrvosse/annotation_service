@@ -106,7 +106,7 @@ http_add_annotation(Request) :-
 			   ],
 			   Annotation),
 		       commit_when_needed(
-			   TargetURI,
+			   Graph,
 			   User,
 			   CommitComment,
 			   _Head))),
@@ -134,11 +134,13 @@ http_remove_annotation(Request) :-
 
 	rdf_has(Annotation, oa:hasBody, Body),
 	rdf_get_annotation_target(Annotation, TargetURI),
+	Graph = TargetURI,
 	!,
 	format(atom(CommitComment), 'rm annotation: ~w on ~w~n~n~w', [Body, TargetURI, UserComment]),
 	with_mutex(TargetURI,
 		   (   rdf_remove_annotation(Annotation),
-		       commit_when_needed(TargetURI, User, CommitComment, Head))),
+		       remove_meta_annotations(Annotation),
+		       commit_when_needed(Graph, User, CommitComment, Head))),
 	reply_json(json([annotation=Annotation,
 			 head=Head])).
 
@@ -232,3 +234,9 @@ screen_name(Annotation, ScreenName) :-
 	rdf_equal(user:anonymous, Anonymous),
 	option(annotatedBy(Annotator), Annotation, Anonymous),
 	iri_xml_namespace(Annotator, _, ScreenName).
+
+remove_meta_annotations(A) :-
+	findall(M, rdf_has(M, oa:hasTarget, A), Metas),
+	forall(member(M, Metas),
+	       rdf_remove_annotation(M)
+	      ).

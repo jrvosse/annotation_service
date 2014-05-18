@@ -1,10 +1,9 @@
 :- module(oa_annotation, [
-	      rdf_add_annotation/2,
+	      rdf_add_annotation/2,        % +AnnotationDict, -URI
+	      rdf_remove_annotation/1,     % +URI
 	      rdf_get_annotation/2,
 	      rdf_get_annotation_target/2,
-	      rdf_get_annotation_by_tfa/5,
-	      rdf_remove_annotation/1,
-	      rdf_has_graph/4
+	      rdf_get_annotation_by_tfa/5
 	  ]).
 /** <module> Open Annotation Prolog API
 
@@ -226,6 +225,7 @@ make_selector_node(Fragment, Shape, Graph, Node) :-
 %
 %	Unifies the predicate/object pairs of Annotation with
 %	Props (using option list notation).
+%	Predicates are unique, this should be easy to convert to dicts.
 
 rdf_get_annotation(Annotation, Props) :-
 	get_annotation_properties(Annotation, _Graph, Props).
@@ -314,6 +314,7 @@ rdf_remove_singleton_objects(Node) :-
 
 rdf_is_singleton_object(Subject, Object) :-
 	rdf(Subject, _, Object),
+	rdf_is_resource(Object),
 	\+ ( rdf(Subject2, _, Object),Subject \= Subject2).
 
 %%	rdf_has_graph(Subject, SuperProperty, Object, Graph) is nondet.
