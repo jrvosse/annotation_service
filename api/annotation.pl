@@ -166,7 +166,7 @@ http_get_annotation(Request) :-
 
 commit_when_needed(NamedGraph, User, Comment, Head) :-
 	(   setting(track, true)
-	->  gv_resource_commit(NamedGraph, User, Comment, Head)
+	->  gv_commit([NamedGraph], User, Comment, Head, [])
 	;   true
 	).
 
