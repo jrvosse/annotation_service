@@ -20,10 +20,9 @@ literal body tags.
 :- use_module(library(semweb/rdfs)).
 :- use_module(library(semweb/rdf_label)).
 :- use_module(library(oa_schema)).
-:- use_module(library(graph_version)).
 
-:- setting(annotation_api:annotation_prefix, uri, 
-	'http://localhost/annotation/instances/', 
+:- setting(annotation_api:annotation_prefix, uri,
+	'http://localhost/annotation/instances/',
 	'Namespace for annotations').
 :- rdf_meta
 	normalize_property(r,o),
@@ -334,4 +333,4 @@ hash_uri(Hash, URI) :-
 	nonvar(Hash), Hash \= null,
 	!,
 	setting(annotation_api:annotation_prefix, Prefix),
-	atomic_concat([Prefix, 'id_', Hash], URI).
+	atomic_list_concat([Prefix, 'id_', Hash], URI).
