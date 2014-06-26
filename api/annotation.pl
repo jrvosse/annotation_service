@@ -157,9 +157,14 @@ http_get_annotation(Request) :-
 				[uri,
 				 optional(true),
 				 description('URI of the annotation field')
-				])
+				]),
+			  user(User,
+			       [uri,
+				optional(true),
+				description('if set, return only annotations by this user')
+			       ])
 			]),
-	collect_annotations([TargetURI], FieldURI, Annotations),
+	collect_annotations([TargetURI], FieldURI, User, Annotations),
 	maplist(enrich_annotation, Annotations, JsonAnnotations),
 	JSON =.. [ FieldURI, json([annotations(JsonAnnotations)])],
 	reply_json(json([JSON])).
@@ -170,18 +175,23 @@ commit_when_needed(NamedGraph, User, Comment, Head) :-
 	;   true
 	).
 
-collect_annotations([], _, []) :- !.
-collect_annotations([TargetURI|Tail], FieldURI, AllAnnotations) :-
-	collect_target_annotation(TargetURI, FieldURI, TargetAnnotations),
-	collect_annotations(TargetAnnotations, FieldURI, MetaAnnotations),
-	collect_annotations(Tail, FieldURI, TailAnnotations),
+collect_annotations([], _, _,  []) :- !.
+collect_annotations([TargetURI|Tail], FieldURI, User, AllAnnotations) :-
+	collect_target_annotation(TargetURI, FieldURI, User, TargetAnnotations),
+	collect_annotations(TargetAnnotations, FieldURI, User, MetaAnnotations),
+	collect_annotations(Tail, FieldURI, User, TailAnnotations),
 	append([TargetAnnotations, MetaAnnotations, TailAnnotations], AllAnnotations).
 
-collect_target_annotation(TargetURI, FieldURI, Annotations) :-
-	(   setting(user_restrict, true),
-	    \+ logged_on(admin)
-	->  user_url(FilterUser)
-	;   true
+collect_target_annotation(TargetURI, FieldURI, User, Annotations) :-
+	(   logged_on(admin)
+	    ->  ( ground(User)
+		  ->  FilterUser = User
+		  ;   true % do not filter on user
+		)
+	    ;   ( setting(user_restrict, true)
+		  -> user_url(FilterUser)
+		  ;  FilterUser = User
+		)
 	),
 
 	findall(A,
