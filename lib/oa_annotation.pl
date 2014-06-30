@@ -232,15 +232,24 @@ make_selector_node(Fragment, Shape, Graph, Node) :-
 rdf_get_annotation(Annotation, Props) :-
 	get_annotation_properties(Annotation, _Graph, Props).
 
-%%	rdf_get_annotation_target(+Annotation, ?TargetUri) is det.
+%%	rdf_get_annotation_target(+Annotation, -TargetUri) is semidet.
+%%	rdf_get_annotation_target(-Annotation, +TargetUri) is nondet.
 %
 %	Get Target uri, abstracting away OA selector stuff
 rdf_get_annotation_target(Annotation, TargetUri) :-
+	ground(Annotation), !,
 	rdf_has(Annotation, oa:hasTarget, TargetNode),
 	(   rdfs_individual_of(TargetNode, oa:'SpecificResource')
 	->  rdf_has(TargetNode, oa:hasSource, TargetUri)
 	;   TargetNode = TargetUri
 	).
+rdf_get_annotation_target(Annotation, TargetUri) :-
+	ground(TargetUri),
+	rdf_has(TargetNode, oa:hasSource, TargetUri),
+	rdf_has(Annotation, oa:hasTarget, TargetNode).
+rdf_get_annotation_target(Annotation, TargetUri) :-
+	ground(TargetUri),
+	rdf_has(Annotation, oa:hasTarget, TargetUri).
 
 rdf_get_annotation_by_tfa(Target, Field, Annotator, Graph, [annotation(Annotation)|Props]) :-
 	rdf_has_graph(Annotation, oa:hasTarget, Target, Graph),
