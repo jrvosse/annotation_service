@@ -3,6 +3,7 @@
 @prefix oa: <http://www.w3.org/ns/oa#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
+old:Annotation rdfs:subClassOf oa:Annotation .
 old:SpecificResource rdfs:subClassOf oa:SpecificResource .
 old:FragmentSelector rdfs:subClassOf oa:FragmentSelector .
 
