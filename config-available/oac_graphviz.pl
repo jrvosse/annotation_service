@@ -93,7 +93,7 @@ cliopatria:list_resource(URI, Options) -->
 	html([]),
 	html([
 	    div(['Existing annotations: ',
-		 \(cpa_browse:as_object(URI, URI))
+	    % \(cpa_browse:as_object(URI, URI)) FIX me
 		]),
 	    a(href(AnnotateLink), 'Make new annotations')
 	]),
