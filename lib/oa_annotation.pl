@@ -15,7 +15,8 @@ literal body tags.
 @author Jacco van Ossenbruggen
 @license LGPL
 */
-
+:- use_module(library(lists)).
+:- use_module(library(option)).
 :- use_module(library(semweb/rdf_db)).
 :- use_module(library(semweb/rdfs)).
 :- use_module(library(semweb/rdf_label)).
@@ -29,8 +30,10 @@ literal body tags.
 	normalize_object(r,o,o),
 	rdf_has_graph(r,r,r,r).
 
-:- rdf_register_ns(oa_target,   'http://localhost/.well-known/genid/oa/target/target_').
-:- rdf_register_ns(oa_selector, 'http://localhost/.well-known/genid/oa/target/selector_').
+:- rdf_register_ns(oa_target,
+		   'http://localhost/.well-known/genid/oa/target/target_').
+:- rdf_register_ns(oa_selector,
+		   'http://localhost/.well-known/genid/oa/target/selector_').
 
 upgrade_property_name(annotated, annotatedAt).
 upgrade_property_name(annotator, annotatedBy).
@@ -235,14 +238,19 @@ rdf_get_annotation(Annotation, Props) :-
 %%	rdf_get_annotation_target(+Annotation, -TargetUri) is semidet.
 %%	rdf_get_annotation_target(-Annotation, +TargetUri) is nondet.
 %
-%	Get Target uri, abstracting away OA selector stuff
+%	Get Target uri, abstracting away OA selector stuff.
+%	Prefer direct Target over oa:hasSource of oa:SpecificResource.
+rdf_get_annotation_target(Annotation, TargetUri) :-
+	ground(Annotation), !,
+	rdf_has(Annotation, oa:hasTarget, TargetUri),
+	\+ rdfs_individual_of(TargetUri, oa:'SpecificResource').
+
 rdf_get_annotation_target(Annotation, TargetUri) :-
 	ground(Annotation), !,
 	rdf_has(Annotation, oa:hasTarget, TargetNode),
-	(   rdfs_individual_of(TargetNode, oa:'SpecificResource')
-	->  rdf_has(TargetNode, oa:hasSource, TargetUri)
-	;   TargetNode = TargetUri
-	).
+	rdfs_individual_of(TargetNode, oa:'SpecificResource'),
+	rdf_has(TargetNode, oa:hasSource, TargetUri).
+
 rdf_get_annotation_target(Annotation, TargetUri) :-
 	ground(TargetUri),
 	rdf_has(TargetNode, oa:hasSource, TargetUri),
