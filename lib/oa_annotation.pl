@@ -253,7 +253,8 @@ rdf_get_annotation_target(Annotation, TargetUri) :-
 
 rdf_get_annotation_target(Annotation, _) :-
 	ground(Annotation),
-	debug(annotation,'Failed to get target for annotation ~p', [Annotation]).
+	debug(annotation,'Failed to get target for annotation ~p', [Annotation]),
+	fail.
 
 rdf_get_annotation_target(Annotation, TargetUri) :-
 	ground(TargetUri),
