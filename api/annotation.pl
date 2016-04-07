@@ -112,10 +112,9 @@ http_add_annotation(Request) :-
 			   Head))),
 
 	enrich_annotation(Annotation, AnnotationJson),
-	reply_json(json([
-		       annotation=AnnotationJson,
-		       head=Head
-		   ])).
+	( var(Head)
+	-> reply_json(json([annotation=AnnotationJson]))
+	; reply_json(json([annotation=AnnotationJson, head=Head]))).
 
 %%	http_remove_annotation(+Request)
 %
