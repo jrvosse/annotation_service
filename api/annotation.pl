@@ -54,7 +54,7 @@ http_add_annotation(Request) :-
 			description('Body of the annotation')]),
 		  graph(Graph,
 			[ optional(true),
-			  description('Named graph to store the triples of this annotation in.  Defaults to uri of the target')
+			  description('Named graph to store the triples of this annotation in, defaults to uri of the target')
 			  ]),
 		  field(FieldURI,
 			[uri,
@@ -142,8 +142,9 @@ http_remove_annotation(Request) :-
 		   (   rdf_remove_annotation(Annotation),
 		       remove_meta_annotations(Annotation),
 		       commit_when_needed(Graph, User, CommitComment, Head))),
-	reply_json(json([annotation=Annotation,
-			 head=Head])).
+	( var(Head)
+	-> reply_json(json([annotation=Annotation]))
+	; reply_json(json([annotation=Annotation, head=Head]))).
 
 http_get_annotation(Request) :-
 	http_parameters(Request,
